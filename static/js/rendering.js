@@ -117,6 +117,33 @@ export function processEatenEvents(events) {
   }
 }
 
+export function processDeathEvent(pid, x, y, color) {
+  // Trigger screen shake on death
+  if (settings.screenShake.enabled && settings.screenShake.triggers.includes('death')) {
+    triggerScreenShake(2.5); // Higher intensity for death
+  }
+
+  if (!settings.particles.enabled) return;
+
+  const cx = x * CELL + CELL / 2;
+  const cy = y * CELL + CELL / 2;
+
+  const count = settings.particles.count * 2; // Double particles for death
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+    const speed = settings.particles.velocityMin * 1.5 + Math.random() * (settings.particles.velocityMax * 1.5 - settings.particles.velocityMin * 1.5);
+    state.particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: settings.particles.life * 1.5, // Longer lasting particles
+      maxLife: settings.particles.life * 1.5,
+      color,
+      size: settings.particles.sizeMin + Math.random() * (settings.particles.sizeMax - settings.particles.sizeMin + 2),
+    });
+  }
+}
+
 export function updateParticles(dt) {
   for (let i = state.particles.length - 1; i >= 0; i--) {
     const p = state.particles[i];

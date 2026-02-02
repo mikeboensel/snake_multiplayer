@@ -62,6 +62,7 @@ def build_state_msg(game: GameState) -> str:
         "level_changing": game.level_changing,
         "level_change_at": game.level_change_at,
         "eaten_events": game.eaten_events,
+        "paused_players": list(game.paused_players),
     })
 
 

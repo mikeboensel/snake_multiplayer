@@ -1,7 +1,7 @@
 // UI management: join screen, lobby, HUD, pickers
 import { state } from './state.js';
 import { NEON_COLORS, HEAD_AVATARS } from './constants.js';
-import { sendGameOptions, sendReady, sendAddAI, sendRemoveAI, sendReturnToLobby, sendPause } from './networking.js';
+import { sendGameOptions, sendReady, sendAddAI, sendRemoveAI, sendReturnToLobby, sendPause, sendInput } from './networking.js';
 import { settings, saveSettings, resetSettings } from './effects-settings.js';
 
 // ── Build Pickers ────────────────────────────────────
@@ -218,7 +218,8 @@ export function setupEventListeners(nameInput, joinScreen, lobbyScreen, gameCont
   const pauseQuitBtn = document.getElementById('pause-quit-btn');
 
   // Track pause state (synced with server)
-  state.isPaused = false;
+  state.iAmPaused = false;
+  state.pausedPlayers = new Set();
 
   function togglePause() {
     // Only allow pause when in game and not in lobby
@@ -272,30 +273,42 @@ export function setupEventListeners(nameInput, joinScreen, lobbyScreen, gameCont
       return;
     }
 
-    // Don't process movement input if paused
-    if (state.isPaused) return;
+    // Don't process movement input if YOU are paused
+    if (state.iAmPaused) return;
 
     const dir = keyMap[e.key];
     if (dir && state.ws && state.ws.readyState === WebSocket.OPEN) {
-      state.ws.send(JSON.stringify({ type: 'input', direction: dir }));
+      sendInput(dir);
       e.preventDefault();
     }
   });
 }
 
-// Handle pause toggle from server
-export function handlePauseToggle(paused, pausedBy) {
-  state.isPaused = paused;
+// Handle pause state from server
+export function handlePauseState(pausedPlayers) {
+  state.pausedPlayers = pausedPlayers;
+  state.iAmPaused = state.pausedPlayers.has(state.myId);
+
   const pauseMenu = document.getElementById('pause-menu');
   const pauseTitle = pauseMenu?.querySelector('h2');
   const pauseHint = pauseMenu?.querySelector('.pause-hint');
 
-  if (paused) {
+  const otherPaused = Array.from(state.pausedPlayers)
+    .filter(pid => pid !== state.myId)
+    .map(pid => {
+      const p = window.gameState?.currState?.players?.[pid];
+      return p?.name || 'Someone';
+    });
+
+  if (state.iAmPaused || otherPaused.length > 0) {
     pauseMenu.style.display = 'flex';
-    if (pausedBy) {
-      pauseTitle.textContent = `PAUSED by ${pausedBy}`;
+    if (state.iAmPaused) {
+      pauseTitle.textContent = 'YOU ARE PAUSED';
+      pauseHint.textContent = 'Press ESC to unpause yourself';
+    } else {
+      pauseTitle.textContent = 'WAITING FOR PLAYERS';
+      pauseHint.textContent = `Paused: ${otherPaused.join(', ')}`;
     }
-    pauseHint.textContent = 'Press ESC to resume';
   } else {
     pauseMenu.style.display = 'none';
   }

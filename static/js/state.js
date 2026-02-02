@@ -12,6 +12,8 @@ export const state = {
   selectedColor: null,
   selectedAvatar: 'angel',
   isReady: false,
+  iAmPaused: false,
+  pausedPlayers: new Set(),
 };
 
 // Canvas references

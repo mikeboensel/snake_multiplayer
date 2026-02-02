@@ -1,7 +1,7 @@
 // WebSocket networking and message handling
 import { state } from './state.js';
-import { updateLobby, syncOptions, handlePauseToggle } from './ui.js';
-import { renderWalls, startGame, processEatenEvents, playDeathSound } from './rendering.js';
+import { updateLobby, syncOptions, handlePauseState } from './ui.js';
+import { renderWalls, startGame, processEatenEvents, playDeathSound, processDeathEvent } from './rendering.js';
 
 export function connect(nameInput, joinScreen, lobbyScreen, gameContainer, readyBtn) {
   const name = nameInput.value.trim() || 'Player';
@@ -72,8 +72,22 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       state.currState = msg;
       state.lastStateTime = performance.now();
       processEatenEvents(msg.eaten_events || []);
+
+      // Check for player deaths (any player, not just local)
+      const prevPlayers = state.prevState?.players || {};
+      for (const [pid, p] of Object.entries(msg.players)) {
+        const prev = prevPlayers[pid];
+        // Player was alive, now dead = just died
+        // Use PREV state's segments because server clears them on death
+        if (prev && prev.alive && !p.alive && prev.segments.length > 0) {
+          const head = prev.segments[0]; // Use PREV state's segments (server clears them on death)
+          playDeathSound();
+          processDeathEvent(pid, head[0], head[1], prev.color);
+        }
+      }
+
+      // Local player death handling for UI
       const me = state.myId && msg.players[state.myId];
-      if (me && !me.alive && state.wasAlive) playDeathSound();
       state.wasAlive = me ? me.alive : true;
       break;
 
@@ -82,8 +96,8 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       renderWalls();
       break;
 
-    case 'pause_toggle':
-      handlePauseToggle(msg.paused, msg.paused_by);
+    case 'pause_state':
+      handlePauseState(new Set(msg.paused_players || []));
       break;
 
     case 'return_to_lobby':
@@ -92,7 +106,8 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       state.currState = null;
       state.prevState = null;
       state.isReady = false;
-      state.isPaused = false;
+      state.iAmPaused = false;
+      state.pausedPlayers.clear();
       state.isSpectating = false;
       readyBtn.classList.remove('is-ready');
       readyBtn.textContent = 'READY';
@@ -116,6 +131,8 @@ export function sendReady() {
 }
 
 export function sendInput(direction) {
+  // Don't send input if this player is paused
+  if (state.iAmPaused) return;
   if (state.ws && state.ws.readyState === WebSocket.OPEN) {
     state.ws.send(JSON.stringify({ type: 'input', direction }));
   }

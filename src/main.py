@@ -125,27 +125,25 @@ async def websocket_endpoint(ws: WebSocket):
                         await manager.broadcast(build_lobby_msg(game))
             elif msg["type"] == "pause":
                 if player_id in game.players and game.started:
-                    game.paused = not game.paused
-                    if game.paused:
-                        game.paused_by = player_id
+                    # Toggle player's personal pause state
+                    if player_id in game.paused_players:
+                        game.paused_players.discard(player_id)
                     else:
-                        game.paused_by = None
-                    player_name = game.players[player_id].name if player_id in game.players else "Someone"
+                        game.paused_players.add(player_id)
+                    # Broadcast new pause state to all players
                     await manager.broadcast(json.dumps({
-                        "type": "pause_toggle",
-                        "paused": game.paused,
-                        "paused_by": player_name if game.paused else None,
+                        "type": "pause_state",
+                        "paused_players": list(game.paused_players),
                     }))
             elif msg["type"] == "input":
-                if player_id in game.players and game.started and not game.paused:
+                if player_id in game.players and game.started and player_id not in game.paused_players:
                     d = msg.get("direction")
                     if d in DIRECTIONS:
                         game.players[player_id].next_direction = d
             elif msg["type"] == "return_to_lobby":
                 if game.started:
                     game.started = False
-                    game.paused = False
-                    game.paused_by = None
+                    game.paused_players.clear()
                     game.level = 1
                     game.walls = build_level_walls(1)
                     game.food.clear()
@@ -177,8 +175,7 @@ async def websocket_endpoint(ws: WebSocket):
         # Reset game state when last player disconnects
         if not game.players:
             game.started = False
-            game.paused = False
-            game.paused_by = None
+            game.paused_players.clear()
             game.level = 1
             game.walls = build_level_walls(1)
             game.food.clear()
@@ -202,10 +199,18 @@ async def websocket_endpoint(ws: WebSocket):
                 }))
 
 
+def any_paused_human_players(game_state: GameState) -> bool:
+    """Check if any human (non-AI) players are paused."""
+    for pid in game_state.paused_players:
+        if pid in game_state.players and not getattr(game_state.players[pid], 'is_ai', False):
+            return True
+    return False
+
+
 async def game_loop():
     prev_level = game.level
     while True:
-        if not game.started or game.paused:
+        if not game.started or any_paused_human_players(game):
             await asyncio.sleep(1 / TICK_RATE)
             continue
 

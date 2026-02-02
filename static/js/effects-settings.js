@@ -5,7 +5,7 @@ export const defaultSettings = {
   // Visual Effects
   particles: {
     enabled: true,
-    count: 18,
+    count: 30,
     velocityMin: 60,
     velocityMax: 140,
     life: 0.4,
@@ -13,9 +13,9 @@ export const defaultSettings = {
     sizeMax: 4,
   },
   screenShake: {
-    enabled: false,
+    enabled: true,
     intensity: 5,
-    duration: 0.2,
+    duration: 0.6,
     triggers: ['eat', 'death', 'collision'],
   },
   areaWarp: {

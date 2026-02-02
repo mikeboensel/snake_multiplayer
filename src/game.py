@@ -36,8 +36,7 @@ class GameState:
         self.eaten_events: list[tuple[int, int, str, str]] = []
         self.started = False
         self.ready_players: set[str] = set()
-        self.paused = False
-        self.paused_by: Optional[str] = None
+        self.paused_players: set[str] = set()
         self.game_options: dict = {
             "food_to_advance": FOOD_TO_ADVANCE,
             "food_count": FOOD_COUNT,
