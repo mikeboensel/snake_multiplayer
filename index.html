@@ -94,6 +94,215 @@
   <div id="pause-menu">
     <h2>PAUSED</h2>
     <div class="pause-hint">Press ESC to resume</div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="settings-panel">
+      <div class="settings-section">
+        <h3>VISUAL EFFECTS</h3>
+
+        <!-- Particles -->
+        <div class="setting-row">
+          <span class="setting-label">Particles</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-particles-enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-sub">
+          <div class="setting-row">
+            <span class="setting-sublabel">Count</span>
+            <div class="slider-container">
+              <input type="range" id="setting-particle-count" min="5" max="50" value="18">
+              <span class="slider-value" id="val-particle-count">18</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-sublabel">Velocity</span>
+            <div class="slider-container">
+              <input type="range" id="setting-particle-velocity" min="20" max="300" value="100">
+              <span class="slider-value" id="val-particle-velocity">100</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-sublabel">Life</span>
+            <div class="slider-container">
+              <input type="range" id="setting-particle-life" min="1" max="10" value="4">
+              <span class="slider-value" id="val-particle-life">0.4s</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen Shake -->
+        <div class="setting-row">
+          <span class="setting-label">Screen Shake</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-screenshake-enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-sub">
+          <div class="setting-row">
+            <span class="setting-sublabel">Intensity</span>
+            <div class="slider-container">
+              <input type="range" id="setting-screenshake-intensity" min="1" max="20" value="5">
+              <span class="slider-value" id="val-screenshake-intensity">5</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-sublabel">Triggers</span>
+            <div class="trigger-group">
+              <label><input type="checkbox" id="setting-shake-trigger-eat" checked> Eat</label>
+              <label><input type="checkbox" id="setting-shake-trigger-death" checked> Death</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Area Warp -->
+        <div class="setting-row">
+          <span class="setting-label">Area Warp</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-areawarp-enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-sub">
+          <div class="setting-row">
+            <span class="setting-sublabel">Intensity</span>
+            <div class="slider-container">
+              <input type="range" id="setting-areawarp-intensity" min="1" max="30" value="10">
+              <span class="slider-value" id="val-areawarp-intensity">10</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-sublabel">Radius</span>
+            <div class="slider-container">
+              <input type="range" id="setting-areawarp-radius" min="50" max="200" value="100">
+              <span class="slider-value" id="val-areawarp-radius">100</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Food Pulse -->
+        <div class="setting-row">
+          <span class="setting-label">Food Pulse</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-pulse-enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-sub">
+          <div class="setting-row">
+            <span class="setting-sublabel">Intensity</span>
+            <div class="slider-container">
+              <input type="range" id="setting-pulse-intensity" min="0" max="100" value="30">
+              <span class="slider-value" id="val-pulse-intensity">30%</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-sublabel">Speed</span>
+            <div class="slider-container">
+              <input type="range" id="setting-pulse-speed" min="50" max="300" value="150">
+              <span class="slider-value" id="val-pulse-speed">150ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Glow -->
+        <div class="setting-row">
+          <span class="setting-label">Glow</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-glow-enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-sub">
+          <div class="setting-row">
+            <span class="setting-sublabel">Intensity</span>
+            <div class="slider-container">
+              <input type="range" id="setting-glow-intensity" min="0" max="200" value="100">
+              <span class="slider-value" id="val-glow-intensity">100%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>AUDIO</h3>
+
+        <!-- Master Volume -->
+        <div class="setting-row">
+          <span class="setting-label">Master Volume</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-sfx-enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-sub">
+          <div class="setting-row">
+            <span class="setting-sublabel">Volume</span>
+            <div class="slider-container">
+              <input type="range" id="setting-master-volume" min="0" max="100" value="50">
+              <span class="slider-value" id="val-master-volume">50%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Eat Sound -->
+        <div class="setting-row">
+          <span class="setting-label">Eat Sound</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-eat-enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-sub">
+          <div class="setting-row">
+            <span class="setting-sublabel">Volume</span>
+            <div class="slider-container">
+              <input type="range" id="setting-eat-volume" min="0" max="100" value="18">
+              <span class="slider-value" id="val-eat-volume">18%</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-sublabel">Pitch</span>
+            <div class="slider-container">
+              <input type="range" id="setting-eat-pitch" min="0" max="100" value="50">
+              <span class="slider-value" id="val-eat-pitch">50%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Death Sound -->
+        <div class="setting-row">
+          <span class="setting-label">Death Sound</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-death-enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-sub">
+          <div class="setting-row">
+            <span class="setting-sublabel">Volume</span>
+            <div class="slider-container">
+              <input type="range" id="setting-death-volume" min="0" max="100" value="20">
+              <span class="slider-value" id="val-death-volume">20%</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-sublabel">Pitch</span>
+            <div class="slider-container">
+              <input type="range" id="setting-death-pitch" min="0" max="100" value="50">
+              <span class="slider-value" id="val-death-pitch">50%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <button id="reset-settings-btn">Reset to Defaults</button>
+      </div>
+    </div>
+
     <button id="pause-quit-btn">QUIT TO LOBBY</button>
   </div>
 </div>

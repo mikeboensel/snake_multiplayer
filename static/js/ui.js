@@ -2,6 +2,7 @@
 import { state } from './state.js';
 import { NEON_COLORS, HEAD_AVATARS } from './constants.js';
 import { sendGameOptions, sendReady, sendAddAI, sendRemoveAI, sendReturnToLobby, sendPause } from './networking.js';
+import { settings, saveSettings, resetSettings } from './effects-settings.js';
 
 // ── Build Pickers ────────────────────────────────────
 export function buildPickers() {
@@ -302,3 +303,162 @@ export function handlePauseToggle(paused, pausedBy) {
 
 // Expose gameState globally for HUD to access myId
 window.gameState = state;
+
+// ── Settings UI ───────────────────────────────────────
+export function setupSettingsUI() {
+  // Helper to bind checkbox to setting
+  function bindCheckbox(id, getter, setter) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.checked = getter();
+    el.addEventListener('change', () => {
+      setter(el.checked);
+      saveSettings();
+    });
+  }
+
+  // Helper to bind slider to setting
+  function bindSlider(id, valueId, getter, setter, formatter = v => v) {
+    const el = document.getElementById(id);
+    const valEl = document.getElementById(valueId);
+    if (!el || !valEl) return;
+    el.value = getter();
+    valEl.textContent = formatter(getter());
+    el.addEventListener('input', () => {
+      const val = parseFloat(el.value);
+      setter(val);
+      valEl.textContent = formatter(val);
+      saveSettings();
+    });
+  }
+
+  // Particles
+  bindCheckbox('setting-particles-enabled',
+    () => settings.particles.enabled,
+    v => settings.particles.enabled = v);
+  bindSlider('setting-particle-count', 'val-particle-count',
+    () => settings.particles.count,
+    v => settings.particles.count = v);
+  bindSlider('setting-particle-velocity', 'val-particle-velocity',
+    () => (settings.particles.velocityMin + settings.particles.velocityMax) / 2,
+    v => {
+      settings.particles.velocityMin = Math.max(20, v - 40);
+      settings.particles.velocityMax = v + 40;
+    });
+  bindSlider('setting-particle-life', 'val-particle-life',
+    () => Math.round(settings.particles.life * 10),
+    v => settings.particles.life = v / 10,
+    v => `${(v / 10).toFixed(1)}s`);
+
+  // Screen Shake
+  bindCheckbox('setting-screenshake-enabled',
+    () => settings.screenShake.enabled,
+    v => settings.screenShake.enabled = v);
+  bindSlider('setting-screenshake-intensity', 'val-screenshake-intensity',
+    () => settings.screenShake.intensity,
+    v => settings.screenShake.intensity = v);
+  bindCheckbox('setting-shake-trigger-eat',
+    () => settings.screenShake.triggers.includes('eat'),
+    v => {
+      if (v && !settings.screenShake.triggers.includes('eat')) {
+        settings.screenShake.triggers.push('eat');
+      } else if (!v) {
+        settings.screenShake.triggers = settings.screenShake.triggers.filter(t => t !== 'eat');
+      }
+    });
+  bindCheckbox('setting-shake-trigger-death',
+    () => settings.screenShake.triggers.includes('death'),
+    v => {
+      if (v && !settings.screenShake.triggers.includes('death')) {
+        settings.screenShake.triggers.push('death');
+      } else if (!v) {
+        settings.screenShake.triggers = settings.screenShake.triggers.filter(t => t !== 'death');
+      }
+    });
+
+  // Area Warp
+  bindCheckbox('setting-areawarp-enabled',
+    () => settings.areaWarp.enabled,
+    v => settings.areaWarp.enabled = v);
+  bindSlider('setting-areawarp-intensity', 'val-areawarp-intensity',
+    () => settings.areaWarp.intensity,
+    v => settings.areaWarp.intensity = v);
+  bindSlider('setting-areawarp-radius', 'val-areawarp-radius',
+    () => settings.areaWarp.radius,
+    v => settings.areaWarp.radius = v);
+
+  // Food Pulse
+  bindCheckbox('setting-pulse-enabled',
+    () => settings.foodPulse.enabled,
+    v => settings.foodPulse.enabled = v);
+  bindSlider('setting-pulse-intensity', 'val-pulse-intensity',
+    () => Math.round(settings.foodPulse.intensity * 100),
+    v => settings.foodPulse.intensity = v / 100,
+    v => `${v}%`);
+  bindSlider('setting-pulse-speed', 'val-pulse-speed',
+    () => settings.foodPulse.speed,
+    v => settings.foodPulse.speed = v,
+    v => `${v}ms`);
+
+  // Glow
+  bindCheckbox('setting-glow-enabled',
+    () => settings.glow.enabled,
+    v => settings.glow.enabled = v);
+  bindSlider('setting-glow-intensity', 'val-glow-intensity',
+    () => Math.round(settings.glow.intensity * 100),
+    v => settings.glow.intensity = v / 100,
+    v => `${v}%`);
+
+  // Audio
+  bindCheckbox('setting-sfx-enabled',
+    () => settings.sfx.enabled,
+    v => settings.sfx.enabled = v);
+  bindSlider('setting-master-volume', 'val-master-volume',
+    () => Math.round(settings.sfx.masterVolume * 100),
+    v => settings.sfx.masterVolume = v / 100,
+    v => `${v}%`);
+
+  // Eat Sound
+  bindCheckbox('setting-eat-enabled',
+    () => settings.sfx.eat.enabled,
+    v => settings.sfx.eat.enabled = v);
+  bindSlider('setting-eat-volume', 'val-eat-volume',
+    () => Math.round(settings.sfx.eat.volume * 100),
+    v => settings.sfx.eat.volume = v / 100,
+    v => `${v}%`);
+  bindSlider('setting-eat-pitch', 'val-eat-pitch',
+    () => 50,
+    v => {
+      const factor = v / 50;
+      settings.sfx.eat.pitchStart = Math.round(520 * factor);
+      settings.sfx.eat.pitchEnd = Math.round(1200 * factor);
+    },
+    v => `${v}%`);
+
+  // Death Sound
+  bindCheckbox('setting-death-enabled',
+    () => settings.sfx.death.enabled,
+    v => settings.sfx.death.enabled = v);
+  bindSlider('setting-death-volume', 'val-death-volume',
+    () => Math.round(settings.sfx.death.volume * 100),
+    v => settings.sfx.death.volume = v / 100,
+    v => `${v}%`);
+  bindSlider('setting-death-pitch', 'val-death-pitch',
+    () => 50,
+    v => {
+      const factor = v / 50;
+      settings.sfx.death.pitchStart = Math.round(180 * factor);
+      settings.sfx.death.pitchEnd = Math.round(40 * factor);
+    },
+    v => `${v}%`);
+
+  // Reset button
+  const resetBtn = document.getElementById('reset-settings-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      resetSettings();
+      // Reload page to refresh UI
+      location.reload();
+    });
+  }
+}

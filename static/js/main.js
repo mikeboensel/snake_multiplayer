@@ -1,5 +1,5 @@
 // Main entry point
-import { buildPickers, setupGameOptions, setupEventListeners } from './ui.js';
+import { buildPickers, setupGameOptions, setupEventListeners, setupSettingsUI } from './ui.js';
 import { state } from './state.js';
 import { NEON_COLORS } from './constants.js';
 
@@ -21,3 +21,6 @@ setupGameOptions();
 
 // Setup event listeners
 setupEventListeners(nameInput, joinScreen, lobbyScreen, gameContainer, readyBtn);
+
+// Initialize settings UI
+setupSettingsUI();

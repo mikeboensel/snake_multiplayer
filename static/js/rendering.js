@@ -3,6 +3,7 @@ import { state, canvas, ctx, wallCanvas, wallCtx } from './state.js';
 import { CELL, HEAD_AVATARS } from './constants.js';
 import { playEatSound, playDeathSound } from './audio.js';
 import { updateHUD } from './ui.js';
+import { settings } from './effects-settings.js';
 
 // ── Wall Rendering (offscreen) ───────────────────────
 export function renderWalls() {
@@ -21,23 +22,95 @@ export function renderWalls() {
   }
 }
 
+// ── Screen Shake ─────────────────────────────────────
+state.screenShake = { active: false, intensity: 0, endTime: 0 };
+
+export function triggerScreenShake(intensityMultiplier = 1) {
+  if (!settings.screenShake.enabled) return;
+  state.screenShake = {
+    active: true,
+    intensity: settings.screenShake.intensity * intensityMultiplier,
+    endTime: performance.now() + settings.screenShake.duration * 1000,
+  };
+}
+
+function applyScreenShake() {
+  if (!state.screenShake.active || performance.now() > state.screenShake.endTime) {
+    state.screenShake.active = false;
+    return { x: 0, y: 0 };
+  }
+  return {
+    x: (Math.random() - 0.5) * state.screenShake.intensity * 2,
+    y: (Math.random() - 0.5) * state.screenShake.intensity * 2,
+  };
+}
+
+// ── Area Warp ────────────────────────────────────────
+state.warps = [];
+
+export function triggerWarp(x, y) {
+  if (!settings.areaWarp.enabled) return;
+  state.warps.push({
+    x, y,
+    endTime: performance.now() + settings.areaWarp.duration * 1000,
+  });
+}
+
+function applyWarpToCoordinate(x, y) {
+  let wx = x, wy = y;
+  const now = performance.now();
+  for (let i = state.warps.length - 1; i >= 0; i--) {
+    const warp = state.warps[i];
+    if (now > warp.endTime) {
+      state.warps.splice(i, 1);
+      continue;
+    }
+    const dx = x - warp.x;
+    const dy = y - warp.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < settings.areaWarp.radius) {
+      const force = (1 - dist / settings.areaWarp.radius) * settings.areaWarp.intensity;
+      wx += Math.sin(dist * 0.1) * force;
+      wy += Math.cos(dist * 0.1) * force;
+    }
+  }
+  return { x: wx, y: wy };
+}
+
 // ── Particles ────────────────────────────────────────
 export function processEatenEvents(events) {
   for (const ev of events) {
     const [gx, gy, color, pid] = ev;
     const cx = gx * CELL + CELL / 2;
     const cy = gy * CELL + CELL / 2;
-    for (let i = 0; i < 18; i++) {
-      const angle = (Math.PI * 2 * i) / 18 + Math.random() * 0.3;
-      const speed = 60 + Math.random() * 80;
+
+    // Trigger screen shake on eat
+    if (settings.screenShake.enabled && settings.screenShake.triggers.includes('eat')) {
+      triggerScreenShake(1);
+    }
+
+    // Trigger warp on eat
+    if (settings.areaWarp.enabled) {
+      triggerWarp(cx, cy);
+    }
+
+    if (!settings.particles.enabled) {
+      if (pid === state.myId) playEatSound();
+      continue;
+    }
+
+    const count = settings.particles.count;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+      const speed = settings.particles.velocityMin + Math.random() * (settings.particles.velocityMax - settings.particles.velocityMin);
       state.particles.push({
         x: cx, y: cy,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        life: 0.4 + Math.random() * 0.1,
-        maxLife: 0.4,
+        life: settings.particles.life * (0.9 + Math.random() * 0.2),
+        maxLife: settings.particles.life,
         color,
-        size: 2 + Math.random() * 2,
+        size: settings.particles.sizeMin + Math.random() * (settings.particles.sizeMax - settings.particles.sizeMin),
       });
     }
     if (pid === state.myId) playEatSound();
@@ -98,6 +171,11 @@ function drawLoop(now) {
   state.animFrame++;
   updateParticles(dt);
 
+  // Apply screen shake before clearing
+  const shake = applyScreenShake();
+  ctx.save();
+  ctx.translate(shake.x, shake.y);
+
   ctx.clearRect(0, 0, 800, 600);
 
   ctx.fillStyle = '#0a0a0a';
@@ -124,14 +202,18 @@ function drawLoop(now) {
   const t = Math.min(elapsed / tickMs, 1);
 
   // Food
-  const pulse = 0.7 + 0.3 * Math.sin(now / 150);
+  const pulse = settings.foodPulse.enabled
+    ? 0.7 + 0.3 * settings.foodPulse.intensity * Math.sin(now / settings.foodPulse.speed)
+    : 1;
+  const glowMult = settings.glow.enabled ? settings.glow.intensity : 0;
   ctx.shadowColor = '#aaff00';
   for (const [fx, fy] of state.currState.food) {
-    ctx.shadowBlur = 12 * pulse;
+    const warped = settings.areaWarp.enabled ? applyWarpToCoordinate(fx * CELL + CELL / 2, fy * CELL + CELL / 2) : { x: fx * CELL + CELL / 2, y: fy * CELL + CELL / 2 };
+    ctx.shadowBlur = 12 * pulse * glowMult;
     ctx.fillStyle = `rgba(170,255,0,${0.8 + 0.2 * pulse})`;
     const pad = 3;
     ctx.beginPath();
-    ctx.arc(fx * CELL + CELL / 2, fy * CELL + CELL / 2, CELL / 2 - pad, 0, Math.PI * 2);
+    ctx.arc(warped.x, warped.y, CELL / 2 - pad, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.shadowBlur = 0;
@@ -148,16 +230,19 @@ function drawLoop(now) {
     const segs = interpolateSegments(prevSegs, p.segments, t);
 
     ctx.shadowColor = p.color;
+    const glowMult = settings.glow.enabled ? settings.glow.intensity : 0;
 
     for (let i = segs.length - 1; i >= 0; i--) {
       const [sx, sy] = segs[i];
       const isHead = i === 0;
       const brightness = isHead ? 1 : 0.7;
-      ctx.shadowBlur = isHead ? 15 : 8;
+      ctx.shadowBlur = (isHead ? 15 : 8) * glowMult;
       ctx.fillStyle = isHead ? brighten(p.color, 40) : p.color;
       ctx.globalAlpha = brightness;
       const pad = isHead ? 1 : 2;
-      ctx.fillRect(sx * CELL + pad, sy * CELL + pad, CELL - pad * 2, CELL - pad * 2);
+
+      const warped = settings.areaWarp.enabled ? applyWarpToCoordinate(sx * CELL, sy * CELL) : { x: sx * CELL, y: sy * CELL };
+      ctx.fillRect(warped.x + pad, warped.y + pad, CELL - pad * 2, CELL - pad * 2);
 
       // Draw emoji on head
       if (isHead && p.head_avatar) {
@@ -168,7 +253,8 @@ function drawLoop(now) {
           ctx.font = `${CELL - 4}px serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(emoji, sx * CELL + CELL / 2, sy * CELL + CELL / 2 + 1);
+          const textPos = settings.areaWarp.enabled ? applyWarpToCoordinate(sx * CELL + CELL / 2, sy * CELL + CELL / 2) : { x: sx * CELL + CELL / 2, y: sy * CELL + CELL / 2 };
+          ctx.fillText(emoji, textPos.x, textPos.y + 1);
         }
       }
     }
@@ -176,9 +262,14 @@ function drawLoop(now) {
   ctx.globalAlpha = 1;
   ctx.shadowBlur = 0;
 
+  // Clean up expired warps
+  state.warps = state.warps.filter(w => now < w.endTime);
+
   drawParticles();
 
   updateHUD(state.currState);
+
+  ctx.restore();
 
   requestAnimationFrame(drawLoop);
 }
