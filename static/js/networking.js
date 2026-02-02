@@ -1,7 +1,7 @@
 // WebSocket networking and message handling
 import { state } from './state.js';
-import { updateLobby, syncOptions, handlePauseState } from './ui.js';
-import { renderWalls, startGame, processEatenEvents, playDeathSound, processDeathEvent } from './rendering.js';
+import { updateLobby, syncOptions, handlePauseState, showGameEndOverlay } from './ui.js';
+import { renderWalls, startGame, processEatenEvents, playDeathSound, processDeathEvent, startFireworks, stopFireworks } from './rendering.js';
 
 export function connect(nameInput, joinScreen, lobbyScreen, gameContainer, readyBtn) {
   const name = nameInput.value.trim() || 'Player';
@@ -61,6 +61,7 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
     case 'game_start':
       state.walls = msg.walls;
       state.myLocation = 'playing';
+      state.myGameOver = false;
       state.isSpectating = false;
       renderWalls();
       lobbyScreen.style.display = 'none';
@@ -92,7 +93,15 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
         // Player was alive, now dead = just died
         // Use PREV state's segments because server clears them on death
         if (prev && prev.alive && !p.alive && prev.segments.length > 0) {
-          const head = prev.segments[0]; // Use PREV state's segments (server clears them on death)
+          const head = prev.segments[0];
+          playDeathSound();
+          processDeathEvent(pid, head[0], head[1], prev.color);
+        }
+      }
+      // Also detect players who vanished from state entirely (permanent death)
+      for (const [pid, prev] of Object.entries(prevPlayers)) {
+        if (prev.alive && prev.segments.length > 0 && !msg.players[pid]) {
+          const head = prev.segments[0];
           playDeathSound();
           processDeathEvent(pid, head[0], head[1], prev.color);
         }
@@ -105,12 +114,13 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       if (me && me.game_over && state.myLocation === 'playing') {
         state.myLocation = 'spectating';
         state.isSpectating = true;
+        state.myGameOver = true;
       }
-      // If local player is not in the state anymore, they're in lobby or spectating
+      // If local player vanished from state while playing — permanent elimination
       if (state.myLocation === 'playing' && !me && state.myId) {
-        // Player was removed from state (moved to spectating by server)
         state.myLocation = 'spectating';
         state.isSpectating = true;
+        state.myGameOver = true;
       }
       break;
 
@@ -124,6 +134,7 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       break;
 
     case 'return_to_lobby':
+      stopFireworks();
       gameContainer.style.display = 'none';
       lobbyScreen.style.display = 'block';
       state.currState = null;
@@ -133,15 +144,19 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       state.pausedPlayers.clear();
       state.isSpectating = false;
       state.myLocation = 'lobby';
+      state.myGameOver = false;
+      state.finalScores = null;
       readyBtn.classList.remove('is-ready');
       readyBtn.textContent = 'READY';
       document.getElementById('death-msg').style.display = 'none';
-      document.getElementById('gameover-msg').style.display = 'none';
+      document.getElementById('gameover-overlay').style.display = 'none';
+      document.getElementById('game-end-overlay').style.display = 'none';
       document.getElementById('pause-menu').style.display = 'none';
       break;
 
     case 'move_to_lobby':
       // Move only this client to lobby (game continues for others)
+      stopFireworks();
       gameContainer.style.display = 'none';
       lobbyScreen.style.display = 'block';
       state.currState = null;
@@ -151,10 +166,13 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       state.pausedPlayers.clear();
       state.isSpectating = false;
       state.myLocation = 'lobby';
+      state.myGameOver = false;
+      state.finalScores = null;
       readyBtn.classList.remove('is-ready');
       readyBtn.textContent = 'READY';
       document.getElementById('death-msg').style.display = 'none';
-      document.getElementById('gameover-msg').style.display = 'none';
+      document.getElementById('gameover-overlay').style.display = 'none';
+      document.getElementById('game-end-overlay').style.display = 'none';
       document.getElementById('pause-menu').style.display = 'none';
       break;
 
@@ -166,21 +184,19 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       break;
 
     case 'game_end':
-      // Everyone back to lobby (game ended because no active players)
-      gameContainer.style.display = 'none';
-      lobbyScreen.style.display = 'block';
-      state.currState = null;
-      state.prevState = null;
+      // Show final scoreboard overlay instead of immediately jumping to lobby
+      state.finalScores = msg.final_scores || [];
+      state.myGameOver = false;
       state.isReady = false;
       state.iAmPaused = false;
       state.pausedPlayers.clear();
-      state.isSpectating = false;
-      state.myLocation = 'lobby';
       readyBtn.classList.remove('is-ready');
       readyBtn.textContent = 'READY';
       document.getElementById('death-msg').style.display = 'none';
-      document.getElementById('gameover-msg').style.display = 'none';
+      document.getElementById('gameover-overlay').style.display = 'none';
       document.getElementById('pause-menu').style.display = 'none';
+      showGameEndOverlay(state.finalScores);
+      startFireworks();
       break;
   }
 }

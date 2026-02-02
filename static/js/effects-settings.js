@@ -34,7 +34,7 @@ export const defaultSettings = {
     intensity: 1.0,
   },
   avatarSize: {
-    scale: 1.5,
+    scale: 2.0,
     range: [1.0, 3.0],
   },
 

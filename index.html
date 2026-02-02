@@ -106,7 +106,20 @@
     <div class="countdown-num" id="cl-num">3</div>
   </div>
   <div id="death-msg">YOU DIED — respawning...</div>
-  <div id="gameover-msg">GAME OVER<div class="sub">No lives remaining. Next level resets lives.</div><button id="return-lobby-btn">RETURN TO LOBBY</button></div>
+  <div id="gameover-overlay">
+    <div class="gameover-content">
+      <div class="gameover-title">GAME OVER</div>
+      <div class="gameover-sub">No lives remaining</div>
+      <button id="return-lobby-btn" class="overlay-btn">RETURN TO LOBBY</button>
+    </div>
+  </div>
+  <div id="game-end-overlay">
+    <div class="game-end-content">
+      <div class="game-end-title">GAME OVER</div>
+      <div id="final-scoreboard"></div>
+      <button id="game-end-lobby-btn" class="overlay-btn">RETURN TO LOBBY</button>
+    </div>
+  </div>
   <div id="pause-menu">
     <h2>PAUSED</h2>
     <div class="pause-hint">Press ESC to resume</div>

@@ -16,6 +16,8 @@ export const state = {
   iAmPaused: false,
   pausedPlayers: new Set(),
   myLocation: 'lobby',  // 'lobby', 'playing', 'spectating'
+  myGameOver: false,
+  finalScores: null,
 };
 
 // Canvas references

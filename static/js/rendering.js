@@ -164,6 +164,9 @@ export function updateParticles(dt) {
     const p = state.particles[i];
     p.x += p.vx * dt;
     p.y += p.vy * dt;
+    if (p.gravity) {
+      p.vy += p.gravity * dt;
+    }
     p.life -= dt;
     if (p.life <= 0) {
       state.particles.splice(i, 1);
@@ -360,6 +363,41 @@ function brighten(hex, amount) {
   const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + amount);
   const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amount);
   return `rgb(${r},${g},${b})`;
+}
+
+// ── Firework Particles ──────────────────────────────
+const FIREWORK_COLORS = ['#0ff', '#f0f', '#ff0', '#0f0', '#f55', '#55f', '#fa0', '#0fa'];
+let fireworkInterval = null;
+
+export function startFireworks() {
+  if (fireworkInterval) return;
+  fireworkInterval = setInterval(() => {
+    const cx = Math.random() * 800;
+    const cy = Math.random() * 400 + 50;
+    const color = FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)];
+    const count = 40 + Math.floor(Math.random() * 20);
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+      const speed = 60 + Math.random() * 120;
+      state.particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        gravity: 80,
+        life: 1.0 + Math.random() * 0.4,
+        maxLife: 1.2,
+        color,
+        size: 2 + Math.random() * 2,
+      });
+    }
+  }, 600);
+}
+
+export function stopFireworks() {
+  if (fireworkInterval) {
+    clearInterval(fireworkInterval);
+    fireworkInterval = null;
+  }
 }
 
 export { playDeathSound };

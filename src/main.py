@@ -115,6 +115,10 @@ async def websocket_endpoint(ws: WebSocket):
                         # Move ready players to playing
                         for pid in game.ready_players:
                             game.players[pid].location = PlayerLocation.PLAYING
+                        # Also move all AI players to playing
+                        for pid, p in game.players.items():
+                            if getattr(p, 'is_ai', False):
+                                p.location = PlayerLocation.PLAYING
                         game.start_game()
                         await manager.broadcast(json.dumps({
                             "type": "game_start",
@@ -197,6 +201,13 @@ async def websocket_endpoint(ws: WebSocket):
 
                     # Only reset game if NO active players remain
                     if game.started and not game.has_active_players:
+                        # Capture final scores before reset
+                        final_scores = [
+                            {"name": p.name, "color": p.color, "score": p.score, "is_ai": getattr(p, "is_ai", False)}
+                            for p in game.players.values()
+                        ]
+                        final_scores.sort(key=lambda x: x["score"], reverse=True)
+
                         game.started = False
                         game.paused_players.clear()
                         game.level = 1
@@ -216,7 +227,7 @@ async def websocket_endpoint(ws: WebSocket):
                             p.respawn_at = None
                             if hasattr(p, 'ai_decision_at'):
                                 p.ai_decision_at = 0.0
-                        await manager.broadcast(json.dumps({"type": "game_end"}))
+                        await manager.broadcast(json.dumps({"type": "game_end", "final_scores": final_scores}))
                         await manager.broadcast(build_lobby_msg(game))
     except WebSocketDisconnect:
         pass
@@ -241,6 +252,13 @@ async def websocket_endpoint(ws: WebSocket):
             game.ready_players.clear()
         # If no active players remain, end the game
         elif game.started and not game.has_active_players:
+            # Capture final scores before reset
+            final_scores = [
+                {"name": p.name, "color": p.color, "score": p.score, "is_ai": getattr(p, "is_ai", False)}
+                for p in game.players.values()
+            ]
+            final_scores.sort(key=lambda x: x["score"], reverse=True)
+
             game.started = False
             game.paused_players.clear()
             game.level = 1
@@ -261,7 +279,7 @@ async def websocket_endpoint(ws: WebSocket):
                 p.respawn_at = None
                 if hasattr(p, 'ai_decision_at'):
                     p.ai_decision_at = 0.0
-            await manager.broadcast(json.dumps({"type": "game_end"}))
+            await manager.broadcast(json.dumps({"type": "game_end", "final_scores": final_scores}))
         if not game.started:
             await manager.broadcast(build_lobby_msg(game))
 
@@ -318,6 +336,39 @@ async def game_loop():
 
         state_msg = build_state_msg(game)
         await manager.broadcast(state_msg)
+
+        # Auto-end game when no active human players remain
+        if game.started and not game.has_active_players:
+            # Capture final scores before reset
+            final_scores = [
+                {"name": p.name, "color": p.color, "score": p.score, "is_ai": getattr(p, "is_ai", False)}
+                for p in game.players.values()
+            ]
+            final_scores.sort(key=lambda x: x["score"], reverse=True)
+
+            game.started = False
+            game.paused_players.clear()
+            game.level = 1
+            game.walls = build_level_walls(1)
+            game.food.clear()
+            game.food_eaten = 0
+            game.level_changing = False
+            game.level_change_at = None
+            game.eaten_events.clear()
+            game.ready_players.clear()
+            lives = game.game_options.get("lives", MAX_LIVES)
+            for p in game.players.values():
+                p.score = 0
+                p.lives = lives
+                p.alive = True
+                p.game_over = False
+                p.segments = []
+                p.respawn_at = None
+                if hasattr(p, 'ai_decision_at'):
+                    p.ai_decision_at = 0.0
+            await manager.broadcast(json.dumps({"type": "game_end", "final_scores": final_scores}))
+            await manager.broadcast(build_lobby_msg(game))
+            prev_level = game.level
 
         await asyncio.sleep(1 / TICK_RATE)
 

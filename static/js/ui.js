@@ -2,6 +2,7 @@
 import { state } from './state.js';
 import { NEON_COLORS, HEAD_AVATARS } from './constants.js';
 import { sendGameOptions, sendReady, sendAddAI, sendRemoveAI, sendReturnToLobby, sendPause, sendInput } from './networking.js';
+import { stopFireworks } from './rendering.js';
 import { settings, saveSettings, resetSettings } from './effects-settings.js';
 import { ImageProcessor, CropTool } from './image-processor.js';
 
@@ -215,18 +216,20 @@ export function updateHUD(state) {
   }).join('');
 
   const deathMsg = document.getElementById('death-msg');
-  const gameoverMsg = document.getElementById('gameover-msg');
-  const me = window.gameState?.myId && state.players[window.gameState.myId];
-  if (me && !me.alive && me.game_over) {
+  const gameoverOverlay = document.getElementById('gameover-overlay');
+  const globalState = window.gameState;
+  const me = globalState?.myId && state.players[globalState.myId];
+  if (globalState?.myGameOver) {
+    // Player permanently eliminated — show gameover overlay
     deathMsg.style.display = 'none';
-    gameoverMsg.style.display = 'block';
+    gameoverOverlay.style.display = 'flex';
   } else if (me && !me.alive) {
     deathMsg.textContent = `YOU DIED \u2014 ${me.lives} ${me.lives === 1 ? 'life' : 'lives'} left`;
     deathMsg.style.display = 'block';
-    gameoverMsg.style.display = 'none';
+    gameoverOverlay.style.display = 'none';
   } else {
     deathMsg.style.display = 'none';
-    gameoverMsg.style.display = 'none';
+    gameoverOverlay.style.display = 'none';
   }
 
   const overlay = document.getElementById('countdown-overlay');
@@ -243,6 +246,26 @@ export function updateHUD(state) {
 
 function esc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── Game End Overlay ────────────────────────────────
+export function showGameEndOverlay(finalScores) {
+  const overlay = document.getElementById('game-end-overlay');
+  const scoreboard = document.getElementById('final-scoreboard');
+
+  scoreboard.innerHTML = (finalScores || []).map((p, i) => {
+    const rankCls = i === 0 ? ' first' : '';
+    const aiTag = p.is_ai ? '<span class="score-ai">AI</span>' : '';
+    return `<div class="score-entry${rankCls}">
+      <span class="score-rank">#${i + 1}</span>
+      <span class="score-swatch" style="background:${esc(p.color)}"></span>
+      <span class="score-name" style="color:${esc(p.color)}">${esc(p.name)}</span>
+      ${aiTag}
+      <span class="score-value">${p.score}</span>
+    </div>`;
+  }).join('');
+
+  overlay.style.display = 'flex';
 }
 
 // ── Setup Event Listeners ─────────────────────────────
@@ -293,6 +316,17 @@ export function setupEventListeners(nameInput, joinScreen, lobbyScreen, gameCont
   };
 
   returnLobbyBtn.onclick = () => {
+    sendReturnToLobby();
+  };
+
+  const gameEndLobbyBtn = document.getElementById('game-end-lobby-btn');
+  gameEndLobbyBtn.onclick = () => {
+    stopFireworks();
+    document.getElementById('game-end-overlay').style.display = 'none';
+    state.finalScores = null;
+    state.myGameOver = false;
+    state.isSpectating = false;
+    state.myLocation = 'lobby';
     sendReturnToLobby();
   };
 
