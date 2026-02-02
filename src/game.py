@@ -14,6 +14,15 @@ from .models import PlayerState
 
 AI_NAMES = ["Botty", "Snaker", "Viper", "Python", "Cobra", "Mamba", "Rattler", "Noodle"]
 
+# Bot difficulty levels: 0=Easy, 1=Medium, 2=Hard
+# intelligence: chance to move toward food (vs random safe direction)
+# mistake_rate: chance to pick ANY direction including unsafe/fatal ones
+BOT_DIFFICULTY = {
+    0: {"name": "Easy", "intelligence": 0.40, "mistake_rate": 0.20},
+    1: {"name": "Medium", "intelligence": 0.65, "mistake_rate": 0.10},
+    2: {"name": "Hard", "intelligence": 0.80, "mistake_rate": 0.03},
+}
+
 
 class GameState:
     def __init__(self):
@@ -27,11 +36,14 @@ class GameState:
         self.eaten_events: list[tuple[int, int, str, str]] = []
         self.started = False
         self.ready_players: set[str] = set()
+        self.paused = False
+        self.paused_by: Optional[str] = None
         self.game_options: dict = {
             "food_to_advance": FOOD_TO_ADVANCE,
             "food_count": FOOD_COUNT,
             "collisions": True,
             "lives": MAX_LIVES,
+            "bot_difficulty": 1,  # 0=Easy, 1=Medium, 2=Hard
         }
 
     def start_game(self):
@@ -138,9 +150,13 @@ class GameState:
         self.level_change_at = None
         lives = self.game_options.get("lives", MAX_LIVES)
         for p in self.players.values():
-            p.lives = lives
-            p.game_over = False
-            self.spawn_player(p)
+            # Only respawn players who haven't lost all lives
+            if not p.game_over:
+                p.lives = lives
+                self.spawn_player(p)
+            else:
+                # Ensure dead players stay dead
+                p.respawn_at = None
         self.spawn_food()
 
     def tick(self):
@@ -235,12 +251,18 @@ class GameState:
             self.level_change_at = now + LEVEL_COUNTDOWN
 
     def get_ai_direction(self, ai_player: PlayerState) -> str:
-        """Simple inefficient AI: moves towards food but with bad decisions."""
+        """AI that moves towards food while avoiding walls. Intelligence based on difficulty."""
         if not ai_player.segments or not self.food:
             return ai_player.direction
 
         head = ai_player.segments[0]
         current_dir = ai_player.direction
+
+        # Get difficulty settings from game options
+        difficulty_level = self.game_options.get("bot_difficulty", 1)
+        difficulty = BOT_DIFFICULTY.get(difficulty_level, BOT_DIFFICULTY[1])
+        intelligence = difficulty["intelligence"]
+        mistake_rate = difficulty["mistake_rate"]
 
         # Find nearest food
         nearest_food = min(self.food, key=lambda f: abs(f[0] - head[0]) + abs(f[1] - head[1]))
@@ -270,28 +292,31 @@ class GameState:
             else:
                 safe_dirs.append((d_name, new_x, new_y))
 
+        # Roll for mistake - chance to pick ANY direction including unsafe/fatal ones
+        if random.random() < mistake_rate:
+            # Mistake! Pick from all directions (including reversing)
+            all_dirs = list(DIRECTIONS.keys())
+            return random.choice(all_dirs)
+
         if not safe_dirs:
             return current_dir  # No safe moves, accept fate
 
-        # Inefficient: 30% chance to pick random safe direction
-        if random.random() < 0.3:
-            return random.choice(safe_dirs)[0]
+        # Roll for intelligent action
+        if random.random() < intelligence:
+            # Intelligent: pick direction that reduces distance to food
+            def dist_to_food(x, y):
+                return abs(x - target_x) + abs(y - target_y)
 
-        # Otherwise, pick direction that reduces distance to food (but not optimally)
-        def dist_to_food(x, y):
-            return abs(x - target_x) + abs(y - target_y)
+            current_dist = dist_to_food(head[0], head[1])
+            better_dirs = [(d, x, y) for d, x, y in safe_dirs if dist_to_food(x, y) < current_dist]
+            if better_dirs:
+                return random.choice(better_dirs)[0]
 
-        current_dist = dist_to_food(head[0], head[1])
-        better_dirs = [(d, x, y) for d, x, y in safe_dirs if dist_to_food(x, y) < current_dist]
-
-        if better_dirs and random.random() < 0.7:
-            return random.choice(better_dirs)[0]
-        else:
-            return random.choice(safe_dirs)[0]
+        # Non-intelligent: pick random safe direction
+        return random.choice(safe_dirs)[0]
 
     def add_ai(self) -> str:
         """Add a new AI player and return its ID."""
-        import itertools
         ai_count = sum(1 for p in self.players.values() if p.is_ai)
         ai_id = f"ai_{ai_count}"
         used_names = {p.name for p in self.players.values()}

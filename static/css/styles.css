@@ -237,6 +237,62 @@ body {
   text-align: center;
   text-shadow: 0 0 6px #0ff;
 }
+.triple-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.triple-slider-container input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 70px;
+  height: 6px;
+  background: linear-gradient(90deg, #1a1a3a 0%, #2a2a5a 100%);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+.triple-slider-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0ff;
+  cursor: pointer;
+  box-shadow: 0 0 8px #0ff, 0 0 4px #0ff;
+  transition: all 0.15s;
+}
+.triple-slider-container input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 12px #0ff, 0 0 6px #0ff;
+}
+.triple-slider-container input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0ff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 8px #0ff, 0 0 4px #0ff;
+  transition: all 0.15s;
+}
+.triple-slider-container input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 12px #0ff, 0 0 6px #0ff;
+}
+.triple-slider-label {
+  color: #666;
+  font-size: 0.65em;
+  font-family: 'Courier New', monospace;
+}
+.triple-slider-label:first-child {
+  text-align: right;
+  min-width: 28px;
+}
+.triple-slider-label:last-of-type {
+  flex-grow: 0;
+}
 #lobby-options .toggle-btn {
   background: #333;
   border: 1px solid #555;
@@ -380,6 +436,43 @@ canvas {
   color: #888;
   margin-top: 8px;
   text-shadow: none;
+}
+#pause-menu {
+  display: none;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 10;
+}
+#pause-menu h2 {
+  font-size: 3em;
+  color: #0ff;
+  text-shadow: 0 0 30px #0ff;
+  margin-bottom: 15px;
+}
+#pause-menu .pause-hint {
+  color: #666;
+  font-size: 0.9em;
+  margin-bottom: 25px;
+}
+#pause-menu button {
+  background: transparent;
+  border: 2px solid #f55;
+  color: #f55;
+  padding: 12px 30px;
+  font-size: 1em;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+#pause-menu button:hover {
+  background: #f55;
+  color: #0a0a0a;
+  box-shadow: 0 0 20px #f55;
 }
 #return-lobby-btn {
   margin-top: 20px;

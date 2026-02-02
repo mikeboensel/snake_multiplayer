@@ -1,7 +1,7 @@
 // UI management: join screen, lobby, HUD, pickers
 import { state } from './state.js';
 import { NEON_COLORS, HEAD_AVATARS } from './constants.js';
-import { sendGameOptions, sendReady, sendAddAI, sendRemoveAI, sendReturnToLobby } from './networking.js';
+import { sendGameOptions, sendReady, sendAddAI, sendRemoveAI, sendReturnToLobby, sendPause } from './networking.js';
 
 // ── Build Pickers ────────────────────────────────────
 export function buildPickers() {
@@ -84,6 +84,7 @@ export function setupGameOptions() {
   const optFoodCount = document.getElementById('opt-food-count');
   const optCollisions = document.getElementById('opt-collisions');
   const optLives = document.getElementById('opt-lives');
+  const optBotDifficulty = document.getElementById('opt-bot-difficulty');
 
   optFoodAdvance.addEventListener('input', () => {
     const v = parseInt(optFoodAdvance.value, 10);
@@ -107,6 +108,13 @@ export function setupGameOptions() {
     document.getElementById('val-lives').textContent = v;
     sendGameOptions({ lives: v });
   });
+
+  optBotDifficulty.addEventListener('input', () => {
+    const v = parseInt(optBotDifficulty.value, 10);
+    const labels = ['Easy', 'Medium', 'Hard'];
+    document.getElementById('val-bot-difficulty').textContent = labels[v];
+    sendGameOptions({ bot_difficulty: v });
+  });
 }
 
 export function syncOptions(opts) {
@@ -115,6 +123,7 @@ export function syncOptions(opts) {
   const optFoodCount = document.getElementById('opt-food-count');
   const optCollisions = document.getElementById('opt-collisions');
   const optLives = document.getElementById('opt-lives');
+  const optBotDifficulty = document.getElementById('opt-bot-difficulty');
 
   optFoodAdvance.value = opts.food_to_advance;
   document.getElementById('val-food-advance').textContent = opts.food_to_advance;
@@ -130,6 +139,11 @@ export function syncOptions(opts) {
   if (opts.lives !== undefined) {
     optLives.value = opts.lives;
     document.getElementById('val-lives').textContent = opts.lives;
+  }
+  if (opts.bot_difficulty !== undefined) {
+    optBotDifficulty.value = opts.bot_difficulty;
+    const labels = ['Easy', 'Medium', 'Hard'];
+    document.getElementById('val-bot-difficulty').textContent = labels[opts.bot_difficulty];
   }
 }
 
@@ -187,6 +201,19 @@ export function setupEventListeners(nameInput, joinScreen, lobbyScreen, gameCont
   const joinBtn = document.getElementById('join-btn');
   const addAiBtn = document.getElementById('add-ai-btn');
   const returnLobbyBtn = document.getElementById('return-lobby-btn');
+  const pauseMenu = document.getElementById('pause-menu');
+  const pauseTitle = pauseMenu?.querySelector('h2');
+  const pauseHint = pauseMenu?.querySelector('.pause-hint');
+  const pauseQuitBtn = document.getElementById('pause-quit-btn');
+
+  // Track pause state (synced with server)
+  state.isPaused = false;
+
+  function togglePause() {
+    // Only allow pause when in game and not in lobby
+    if (gameContainer.style.display !== 'block') return;
+    sendPause();
+  }
 
   joinBtn.onclick = () => {
     import('./audio.js').then(({ ensureAudio }) => ensureAudio());
@@ -215,6 +242,10 @@ export function setupEventListeners(nameInput, joinScreen, lobbyScreen, gameCont
     sendReturnToLobby();
   };
 
+  pauseQuitBtn.onclick = () => {
+    sendReturnToLobby();
+  };
+
   // Input handling for game controls
   const keyMap = {
     ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
@@ -223,12 +254,40 @@ export function setupEventListeners(nameInput, joinScreen, lobbyScreen, gameCont
   };
 
   document.addEventListener('keydown', (e) => {
+    // Handle Escape for pause menu
+    if (e.key === 'Escape') {
+      togglePause();
+      e.preventDefault();
+      return;
+    }
+
+    // Don't process movement input if paused
+    if (state.isPaused) return;
+
     const dir = keyMap[e.key];
     if (dir && state.ws && state.ws.readyState === WebSocket.OPEN) {
       state.ws.send(JSON.stringify({ type: 'input', direction: dir }));
       e.preventDefault();
     }
   });
+}
+
+// Handle pause toggle from server
+export function handlePauseToggle(paused, pausedBy) {
+  state.isPaused = paused;
+  const pauseMenu = document.getElementById('pause-menu');
+  const pauseTitle = pauseMenu?.querySelector('h2');
+  const pauseHint = pauseMenu?.querySelector('.pause-hint');
+
+  if (paused) {
+    pauseMenu.style.display = 'flex';
+    if (pausedBy) {
+      pauseTitle.textContent = `PAUSED by ${pausedBy}`;
+    }
+    pauseHint.textContent = 'Press ESC to resume';
+  } else {
+    pauseMenu.style.display = 'none';
+  }
 }
 
 // Expose gameState globally for HUD to access myId

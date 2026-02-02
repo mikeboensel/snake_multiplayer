@@ -58,6 +58,17 @@
   </div>
   <div id="ai-controls">
     <h3>AI BOTS</h3>
+    <div class="opt-row">
+      <span class="opt-label">Bot difficulty</span>
+      <span class="opt-control">
+        <div class="triple-slider-container">
+          <span class="triple-slider-label">Easy</span>
+          <input type="range" id="opt-bot-difficulty" min="0" max="2" value="1" step="1">
+          <span class="triple-slider-label">Hard</span>
+          <span class="slider-value" id="val-bot-difficulty">Medium</span>
+        </div>
+      </span>
+    </div>
     <div class="ai-btn-row">
       <button class="ai-btn" id="add-ai-btn">+ ADD BOT</button>
     </div>
@@ -80,6 +91,11 @@
   </div>
   <div id="death-msg">YOU DIED — respawning...</div>
   <div id="gameover-msg">GAME OVER<div class="sub">No lives remaining. Next level resets lives.</div><button id="return-lobby-btn">RETURN TO LOBBY</button></div>
+  <div id="pause-menu">
+    <h2>PAUSED</h2>
+    <div class="pause-hint">Press ESC to resume</div>
+    <button id="pause-quit-btn">QUIT TO LOBBY</button>
+  </div>
 </div>
 
 <script type="module" src="/static/js/main.js"></script>

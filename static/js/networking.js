@@ -1,6 +1,6 @@
 // WebSocket networking and message handling
 import { state } from './state.js';
-import { updateLobby, syncOptions } from './ui.js';
+import { updateLobby, syncOptions, handlePauseToggle } from './ui.js';
 import { renderWalls, startGame, processEatenEvents, playDeathSound } from './rendering.js';
 
 export function connect(nameInput, joinScreen, lobbyScreen, gameContainer, readyBtn) {
@@ -72,16 +72,22 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       renderWalls();
       break;
 
+    case 'pause_toggle':
+      handlePauseToggle(msg.paused, msg.paused_by);
+      break;
+
     case 'return_to_lobby':
       gameContainer.style.display = 'none';
       lobbyScreen.style.display = 'block';
       state.currState = null;
       state.prevState = null;
       state.isReady = false;
+      state.isPaused = false;
       readyBtn.classList.remove('is-ready');
       readyBtn.textContent = 'READY';
       document.getElementById('death-msg').style.display = 'none';
       document.getElementById('gameover-msg').style.display = 'none';
+      document.getElementById('pause-menu').style.display = 'none';
       break;
   }
 }
@@ -119,5 +125,11 @@ export function sendRemoveAI(aiId) {
 export function sendReturnToLobby() {
   if (state.ws && state.ws.readyState === WebSocket.OPEN) {
     state.ws.send(JSON.stringify({ type: 'return_to_lobby' }));
+  }
+}
+
+export function sendPause() {
+  if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+    state.ws.send(JSON.stringify({ type: 'pause' }));
   }
 }
