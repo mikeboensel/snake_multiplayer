@@ -191,6 +191,59 @@ body {
   outline: none;
 }
 #lobby-options .opt-control input[type="number"]:focus { border-color: #0ff; }
+#lobby-options .opt-control { position: relative; }
+#lobby-options .slider-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#lobby-options .slider-container input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 6px;
+  background: linear-gradient(90deg, #1a1a3a 0%, #2a2a5a 100%);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+#lobby-options .slider-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0ff;
+  cursor: pointer;
+  box-shadow: 0 0 8px #0ff, 0 0 4px #0ff;
+  transition: all 0.15s;
+}
+#lobby-options .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 12px #0ff, 0 0 6px #0ff;
+}
+#lobby-options .slider-container input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0ff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 8px #0ff, 0 0 4px #0ff;
+  transition: all 0.15s;
+}
+#lobby-options .slider-container input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 12px #0ff, 0 0 6px #0ff;
+}
+#lobby-options .slider-value {
+  color: #0ff;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  min-width: 16px;
+  text-align: center;
+  text-shadow: 0 0 6px #0ff;
+}
 #lobby-options .toggle-btn {
   background: #333;
   border: 1px solid #555;
@@ -374,11 +427,21 @@ canvas {
     <h3>GAME OPTIONS</h3>
     <div class="opt-row">
       <span class="opt-label">Fruit to advance</span>
-      <span class="opt-control"><input type="number" id="opt-food-advance" min="1" max="19" value="5"></span>
+      <span class="opt-control">
+        <div class="slider-container">
+          <input type="range" id="opt-food-advance" min="1" max="19" value="5">
+          <span class="slider-value" id="val-food-advance">5</span>
+        </div>
+      </span>
     </div>
     <div class="opt-row">
       <span class="opt-label">Fruit on screen</span>
-      <span class="opt-control"><input type="number" id="opt-food-count" min="1" max="5" value="3"></span>
+      <span class="opt-control">
+        <div class="slider-container">
+          <input type="range" id="opt-food-count" min="1" max="5" value="3">
+          <span class="slider-value" id="val-food-count">3</span>
+        </div>
+      </span>
     </div>
     <div class="opt-row">
       <span class="opt-label">Snakes can collide</span>
@@ -386,7 +449,12 @@ canvas {
     </div>
     <div class="opt-row">
       <span class="opt-label">Lives per player</span>
-      <span class="opt-control"><input type="number" id="opt-lives" min="1" max="9" value="3"></span>
+      <span class="opt-control">
+        <div class="slider-container">
+          <input type="range" id="opt-lives" min="1" max="9" value="3">
+          <span class="slider-value" id="val-lives">3</span>
+        </div>
+      </span>
     </div>
   </div>
   <div id="lobby-ready-count"></div>
@@ -632,14 +700,16 @@ canvas {
     }
   }
 
-  optFoodAdvance.addEventListener('change', () => {
+  optFoodAdvance.addEventListener('input', () => {
     const v = parseInt(optFoodAdvance.value, 10);
-    if (v >= 1 && v <= 19) sendGameOptions({ food_to_advance: v });
+    document.getElementById('val-food-advance').textContent = v;
+    sendGameOptions({ food_to_advance: v });
   });
 
-  optFoodCount.addEventListener('change', () => {
+  optFoodCount.addEventListener('input', () => {
     const v = parseInt(optFoodCount.value, 10);
-    if (v >= 1 && v <= 5) sendGameOptions({ food_count: v });
+    document.getElementById('val-food-count').textContent = v;
+    sendGameOptions({ food_count: v });
   });
 
   optCollisions.addEventListener('click', () => {
@@ -647,15 +717,18 @@ canvas {
     sendGameOptions({ collisions: !current });
   });
 
-  optLives.addEventListener('change', () => {
+  optLives.addEventListener('input', () => {
     const v = parseInt(optLives.value, 10);
-    if (v >= 1 && v <= 9) sendGameOptions({ lives: v });
+    document.getElementById('val-lives').textContent = v;
+    sendGameOptions({ lives: v });
   });
 
   function syncOptions(opts) {
     if (!opts) return;
     optFoodAdvance.value = opts.food_to_advance;
+    document.getElementById('val-food-advance').textContent = opts.food_to_advance;
     optFoodCount.value = opts.food_count;
+    document.getElementById('val-food-count').textContent = opts.food_count;
     if (opts.collisions) {
       optCollisions.classList.add('on');
       optCollisions.textContent = 'ON';
@@ -665,6 +738,7 @@ canvas {
     }
     if (opts.lives !== undefined) {
       optLives.value = opts.lives;
+      document.getElementById('val-lives').textContent = opts.lives;
     }
   }
 
