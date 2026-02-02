@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Snake</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'Courier New', monospace;
+  color: #ddd;
+  overflow: hidden;
+}
+#join-screen {
+  text-align: center;
+  z-index: 10;
+}
+#join-screen h1 {
+  font-size: 3em;
+  color: #0ff;
+  text-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+  margin-bottom: 20px;
+}
+#join-screen input {
+  background: #111;
+  border: 2px solid #0ff;
+  color: #0ff;
+  padding: 12px 20px;
+  font-size: 1.2em;
+  font-family: 'Courier New', monospace;
+  outline: none;
+  border-radius: 4px;
+  text-align: center;
+  width: 260px;
+}
+#join-screen input::placeholder { color: #066; }
+#join-screen input:focus { box-shadow: 0 0 15px #0ff; }
+#join-screen button {
+  display: block;
+  margin: 15px auto 0;
+  background: transparent;
+  border: 2px solid #0ff;
+  color: #0ff;
+  padding: 10px 40px;
+  font-size: 1.1em;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+#join-screen button:hover {
+  background: #0ff;
+  color: #0a0a0a;
+  box-shadow: 0 0 20px #0ff;
+}
+#join-screen .hint {
+  margin-top: 15px;
+  color: #555;
+  font-size: 0.85em;
+}
+#game-container {
+  display: none;
+  position: relative;
+}
+canvas {
+  display: block;
+  border: 1px solid #1a1a3a;
+  box-shadow: 0 0 30px rgba(0,255,255,0.1);
+}
+#hud {
+  position: absolute;
+  top: -35px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95em;
+}
+#hud .level-info { color: #0ff; text-shadow: 0 0 8px #0ff; }
+#hud .food-counter { color: #9f0; text-shadow: 0 0 8px #9f0; }
+#legend {
+  position: absolute;
+  top: 10px;
+  right: -220px;
+  width: 210px;
+  max-height: 580px;
+  overflow-y: auto;
+  background: rgba(10,10,10,0.9);
+  border: 1px solid #1a1a3a;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 0.8em;
+}
+#legend h3 {
+  color: #0ff;
+  margin-bottom: 8px;
+  text-shadow: 0 0 6px #0ff;
+  font-size: 0.95em;
+}
+#legend .entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid #1a1a2a;
+  white-space: nowrap;
+}
+#legend .entry.me { background: rgba(255,255,255,0.04); margin: 0 -4px; padding: 4px 4px; border-radius: 2px; }
+#legend .entry.dead { opacity: 0.4; }
+#legend .color-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+#legend .pname {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#legend .lives { flex-shrink: 0; font-size: 0.85em; color: #f55; letter-spacing: -1px; }
+#legend .pscore { flex-shrink: 0; min-width: 24px; text-align: right; color: #9f0; }
+#countdown-overlay {
+  display: none;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  font-size: 1.2em;
+  z-index: 5;
+}
+#countdown-overlay .level-text {
+  font-size: 2.5em;
+  color: #0ff;
+  text-shadow: 0 0 30px #0ff;
+  margin-bottom: 10px;
+}
+#countdown-overlay .countdown-num {
+  font-size: 4em;
+  color: #ff0;
+  text-shadow: 0 0 40px #ff0;
+}
+#death-msg {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #f33;
+  font-size: 1.8em;
+  text-shadow: 0 0 20px #f33;
+  z-index: 4;
+  pointer-events: none;
+}
+#gameover-msg {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #f55;
+  font-size: 2.2em;
+  text-shadow: 0 0 30px #f33;
+  z-index: 4;
+  pointer-events: none;
+  text-align: center;
+}
+#gameover-msg .sub {
+  font-size: 0.4em;
+  color: #888;
+  margin-top: 8px;
+  text-shadow: none;
+}
+</style>
+</head>
+<body>
+
+<div id="join-screen">
+  <h1>NEON SNAKE</h1>
+  <input type="text" id="name-input" placeholder="Enter your name" maxlength="16" autofocus>
+  <button id="join-btn">PLAY</button>
+  <div class="hint">Arrow keys or WASD to move</div>
+</div>
+
+<div id="game-container">
+  <div id="hud">
+    <span class="level-info" id="level-info">LEVEL 1</span>
+    <span class="food-counter" id="food-counter">FOOD: 0/5</span>
+  </div>
+  <canvas id="game" width="800" height="600"></canvas>
+  <div id="legend"><h3>PLAYERS</h3><div id="legend-entries"></div></div>
+  <div id="countdown-overlay">
+    <div class="level-text" id="cl-level">LEVEL 2</div>
+    <div class="countdown-num" id="cl-num">3</div>
+  </div>
+  <div id="death-msg">YOU DIED — respawning...</div>
+  <div id="gameover-msg">GAME OVER<div class="sub">No lives remaining. Next level resets lives.</div></div>
+</div>
+
+<script>
+(() => {
+  // ── Constants ────────────────────────────────────────
+  const CELL = 20;
+  const GRID_W = 40, GRID_H = 30;
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  // Offscreen wall canvas
+  const wallCanvas = document.createElement('canvas');
+  wallCanvas.width = 800;
+  wallCanvas.height = 600;
+  const wallCtx = wallCanvas.getContext('2d');
+
+  // ── State ────────────────────────────────────────────
+  let ws = null;
+  let myId = null;
+  let walls = [];
+  let prevState = null;
+  let currState = null;
+  let lastStateTime = 0;
+  let particles = [];
+  let animFrame = 0;
+
+  // ── Join ─────────────────────────────────────────────
+  const joinScreen = document.getElementById('join-screen');
+  const gameContainer = document.getElementById('game-container');
+  const nameInput = document.getElementById('name-input');
+  const joinBtn = document.getElementById('join-btn');
+
+  function connect() {
+    const name = nameInput.value.trim() || 'Player';
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}`);
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'join', name }));
+    };
+
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'welcome') {
+        myId = msg.player_id;
+        walls = msg.walls;
+        renderWalls();
+        joinScreen.style.display = 'none';
+        gameContainer.style.display = 'block';
+        requestAnimationFrame(draw);
+      } else if (msg.type === 'state') {
+        prevState = currState;
+        currState = msg;
+        lastStateTime = performance.now();
+        processEatenEvents(msg.eaten_events || []);
+        updateHUD(msg);
+      } else if (msg.type === 'level_change') {
+        walls = msg.walls;
+        renderWalls();
+      }
+    };
+
+    ws.onclose = () => {
+      setTimeout(() => {
+        joinScreen.style.display = 'block';
+        gameContainer.style.display = 'none';
+        myId = null;
+        currState = null;
+        prevState = null;
+      }, 500);
+    };
+  }
+
+  joinBtn.onclick = connect;
+  nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') connect();
+  });
+
+  // ── Input ────────────────────────────────────────────
+  const keyMap = {
+    ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+    w: 'up', s: 'down', a: 'left', d: 'right',
+    W: 'up', S: 'down', A: 'left', D: 'right',
+  };
+
+  document.addEventListener('keydown', (e) => {
+    const dir = keyMap[e.key];
+    if (dir && ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'input', direction: dir }));
+      e.preventDefault();
+    }
+  });
+
+  // ── Wall Rendering (offscreen) ───────────────────────
+  function renderWalls() {
+    wallCtx.clearRect(0, 0, 800, 600);
+    wallCtx.shadowColor = '#4444aa';
+    wallCtx.shadowBlur = 8;
+    wallCtx.fillStyle = '#2a2a4a';
+    for (const [x, y] of walls) {
+      wallCtx.fillRect(x * CELL, y * CELL, CELL, CELL);
+    }
+    wallCtx.shadowBlur = 0;
+    // Border highlight
+    wallCtx.strokeStyle = '#3a3a6a';
+    wallCtx.lineWidth = 0.5;
+    for (const [x, y] of walls) {
+      wallCtx.strokeRect(x * CELL + 0.5, y * CELL + 0.5, CELL - 1, CELL - 1);
+    }
+  }
+
+  // ── Particles ────────────────────────────────────────
+  function processEatenEvents(events) {
+    for (const [gx, gy, color] of events) {
+      const cx = gx * CELL + CELL / 2;
+      const cy = gy * CELL + CELL / 2;
+      for (let i = 0; i < 18; i++) {
+        const angle = (Math.PI * 2 * i) / 18 + Math.random() * 0.3;
+        const speed = 60 + Math.random() * 80;
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 0.4 + Math.random() * 0.1,
+          maxLife: 0.4,
+          color,
+          size: 2 + Math.random() * 2,
+        });
+      }
+    }
+  }
+
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+      if (p.life <= 0) {
+        particles.splice(i, 1);
+      }
+    }
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const alpha = Math.max(0, p.life / p.maxLife);
+      ctx.globalAlpha = alpha;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+  }
+
+  // ── HUD ──────────────────────────────────────────────
+  function updateHUD(state) {
+    document.getElementById('level-info').textContent = `LEVEL ${state.level}`;
+    document.getElementById('food-counter').textContent = `FOOD: ${state.food_eaten}/${state.food_target}`;
+
+    // Player legend
+    const entries = document.getElementById('legend-entries');
+    const sorted = Object.entries(state.players)
+      .map(([id, p]) => ({ id, ...p }))
+      .sort((a, b) => b.score - a.score);
+    entries.innerHTML = sorted.map(p => {
+      const hearts = '\u2764'.repeat(Math.max(0, p.lives));
+      const isMe = p.id === myId;
+      const cls = (isMe ? ' me' : '') + (p.game_over ? ' dead' : '');
+      return `<div class="entry${cls}"><span class="color-swatch" style="background:${p.color}"></span><span class="pname" style="color:${p.color}">${esc(p.name)}</span><span class="lives">${hearts}</span><span class="pscore">${p.score}</span></div>`;
+    }).join('');
+
+    // Death / game over messages
+    const deathMsg = document.getElementById('death-msg');
+    const gameoverMsg = document.getElementById('gameover-msg');
+    const me = myId && state.players[myId];
+    if (me && !me.alive && me.game_over) {
+      deathMsg.style.display = 'none';
+      gameoverMsg.style.display = 'block';
+    } else if (me && !me.alive) {
+      deathMsg.textContent = `YOU DIED — ${me.lives} ${me.lives === 1 ? 'life' : 'lives'} left`;
+      deathMsg.style.display = 'block';
+      gameoverMsg.style.display = 'none';
+    } else {
+      deathMsg.style.display = 'none';
+      gameoverMsg.style.display = 'none';
+    }
+
+    // Level countdown
+    const overlay = document.getElementById('countdown-overlay');
+    if (state.level_changing && state.level_change_at) {
+      overlay.style.display = 'flex';
+      const nextLevel = (state.level % 8) + 1;
+      document.getElementById('cl-level').textContent = `LEVEL ${nextLevel}`;
+      const remaining = Math.max(0, state.level_change_at - Date.now() / 1000);
+      document.getElementById('cl-num').textContent = Math.ceil(remaining);
+    } else {
+      overlay.style.display = 'none';
+    }
+  }
+
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ── Interpolation helper ─────────────────────────────
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function interpolateSegments(prevSegs, currSegs, t) {
+    if (!prevSegs || !currSegs || prevSegs.length === 0) return currSegs || [];
+    const result = [];
+    const len = currSegs.length;
+    for (let i = 0; i < len; i++) {
+      if (i < prevSegs.length) {
+        result.push([
+          lerp(prevSegs[i][0], currSegs[i][0], t),
+          lerp(prevSegs[i][1], currSegs[i][1], t),
+        ]);
+      } else {
+        result.push([currSegs[i][0], currSegs[i][1]]);
+      }
+    }
+    return result;
+  }
+
+  // ── Drawing ──────────────────────────────────────────
+  let lastDraw = performance.now();
+
+  function draw(now) {
+    const dt = (now - lastDraw) / 1000;
+    lastDraw = now;
+    animFrame++;
+    updateParticles(dt);
+
+    ctx.clearRect(0, 0, 800, 600);
+
+    // Background
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, 800, 600);
+
+    // Subtle grid
+    ctx.strokeStyle = '#151515';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x <= 800; x += CELL) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 600); ctx.stroke();
+    }
+    for (let y = 0; y <= 600; y += CELL) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(800, y); ctx.stroke();
+    }
+
+    // Walls
+    ctx.drawImage(wallCanvas, 0, 0);
+
+    if (!currState) {
+      requestAnimationFrame(draw);
+      return;
+    }
+
+    // Interpolation factor
+    const tickMs = 100; // 10 ticks/sec
+    const elapsed = now - lastStateTime;
+    const t = Math.min(elapsed / tickMs, 1);
+
+    // Food (pulsing glow)
+    const pulse = 0.7 + 0.3 * Math.sin(now / 150);
+    ctx.shadowColor = '#aaff00';
+    for (const [fx, fy] of currState.food) {
+      ctx.shadowBlur = 12 * pulse;
+      ctx.fillStyle = `rgba(170,255,0,${0.8 + 0.2 * pulse})`;
+      const pad = 3;
+      ctx.beginPath();
+      ctx.arc(fx * CELL + CELL / 2, fy * CELL + CELL / 2, CELL / 2 - pad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // Snakes
+    const players = currState.players;
+    const prevPlayers = prevState ? prevState.players : {};
+
+    for (const [pid, p] of Object.entries(players)) {
+      if (!p.alive || !p.segments || p.segments.length === 0) continue;
+
+      const prev = prevPlayers[pid];
+      const prevSegs = prev && prev.alive ? prev.segments : null;
+      const segs = interpolateSegments(prevSegs, p.segments, t);
+
+      ctx.shadowColor = p.color;
+
+      for (let i = segs.length - 1; i >= 0; i--) {
+        const [sx, sy] = segs[i];
+        const isHead = i === 0;
+        const brightness = isHead ? 1 : 0.7;
+        ctx.shadowBlur = isHead ? 15 : 8;
+        ctx.fillStyle = isHead ? brighten(p.color, 40) : p.color;
+        ctx.globalAlpha = brightness;
+        const pad = isHead ? 1 : 2;
+        ctx.fillRect(sx * CELL + pad, sy * CELL + pad, CELL - pad * 2, CELL - pad * 2);
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+
+    // Particles on top
+    drawParticles();
+
+    requestAnimationFrame(draw);
+  }
+
+  function brighten(hex, amount) {
+    const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + amount);
+    const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + amount);
+    const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amount);
+    return `rgb(${r},${g},${b})`;
+  }
+})();
+</script>
+</body>
+</html>
