@@ -19,6 +19,7 @@ body {
 #join-screen {
   text-align: center;
   z-index: 10;
+  max-width: 400px;
 }
 #join-screen h1 {
   font-size: 3em;
@@ -63,6 +64,162 @@ body {
   color: #555;
   font-size: 0.85em;
 }
+#join-screen .picker-label {
+  color: #0ff;
+  margin: 15px 0 8px;
+  font-size: 0.9em;
+  text-shadow: 0 0 6px #0ff;
+}
+#color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+#color-picker .color-opt {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#color-picker .color-opt:hover { transform: scale(1.2); }
+#color-picker .color-opt.selected { border-color: #fff; box-shadow: 0 0 12px currentColor; }
+#avatar-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+#avatar-picker .avatar-opt {
+  width: 40px;
+  height: 40px;
+  font-size: 1.5em;
+  background: #111;
+  border: 2px solid #333;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+#avatar-picker .avatar-opt:hover { border-color: #888; transform: scale(1.1); }
+#avatar-picker .avatar-opt.selected { border-color: #0ff; box-shadow: 0 0 10px #0ff; }
+#lobby-screen {
+  display: none;
+  text-align: center;
+  z-index: 10;
+  min-width: 350px;
+}
+#lobby-screen h2 {
+  color: #0ff;
+  font-size: 2em;
+  text-shadow: 0 0 15px #0ff;
+  margin-bottom: 15px;
+}
+#lobby-players {
+  text-align: left;
+  margin: 0 auto 15px;
+  max-width: 320px;
+}
+#lobby-players .lobby-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: rgba(20,20,40,0.8);
+  border: 1px solid #1a1a3a;
+  border-radius: 4px;
+}
+#lobby-players .lobby-entry .lobby-avatar { font-size: 1.4em; }
+#lobby-players .lobby-entry .lobby-name { flex: 1; }
+#lobby-players .lobby-entry .lobby-badge {
+  font-size: 0.8em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+#lobby-players .lobby-entry .lobby-badge.ready { background: #0a3; color: #fff; }
+#lobby-players .lobby-entry .lobby-badge.not-ready { background: #333; color: #888; }
+#lobby-ready-count {
+  color: #9f0;
+  margin-bottom: 10px;
+  font-size: 0.95em;
+}
+#lobby-options {
+  text-align: left;
+  margin: 0 auto 15px;
+  max-width: 320px;
+  padding: 10px 14px;
+  background: rgba(20,20,40,0.8);
+  border: 1px solid #1a1a3a;
+  border-radius: 4px;
+}
+#lobby-options h3 {
+  color: #0ff;
+  font-size: 0.85em;
+  text-shadow: 0 0 6px #0ff;
+  margin-bottom: 10px;
+  text-align: center;
+}
+#lobby-options .opt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+#lobby-options .opt-row:last-child { margin-bottom: 0; }
+#lobby-options .opt-label {
+  color: #aaa;
+  font-size: 0.8em;
+}
+#lobby-options .opt-control input[type="number"] {
+  background: #111;
+  border: 1px solid #333;
+  color: #0ff;
+  width: 52px;
+  padding: 3px 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  text-align: center;
+  border-radius: 3px;
+  outline: none;
+}
+#lobby-options .opt-control input[type="number"]:focus { border-color: #0ff; }
+#lobby-options .toggle-btn {
+  background: #333;
+  border: 1px solid #555;
+  color: #888;
+  padding: 3px 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8em;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+#lobby-options .toggle-btn.on { background: #0a3; border-color: #0a3; color: #fff; }
+#ready-btn {
+  background: transparent;
+  border: 2px solid #555;
+  color: #888;
+  padding: 10px 40px;
+  font-size: 1.1em;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+#ready-btn.is-ready {
+  border-color: #0a3;
+  color: #0a3;
+  box-shadow: 0 0 15px rgba(0,170,51,0.4);
+}
+#ready-btn:hover { opacity: 0.85; }
 #game-container {
   display: none;
   position: relative;
@@ -186,8 +343,34 @@ canvas {
 <div id="join-screen">
   <h1>NEON SNAKE</h1>
   <input type="text" id="name-input" placeholder="Enter your name" maxlength="16" autofocus>
-  <button id="join-btn">PLAY</button>
+  <div class="picker-label">PICK YOUR COLOR</div>
+  <div id="color-picker"></div>
+  <div class="picker-label">PICK YOUR HEAD</div>
+  <div id="avatar-picker"></div>
+  <button id="join-btn">JOIN LOBBY</button>
   <div class="hint">Arrow keys or WASD to move</div>
+</div>
+
+<div id="lobby-screen">
+  <h2>LOBBY</h2>
+  <div id="lobby-players"></div>
+  <div id="lobby-options">
+    <h3>GAME OPTIONS</h3>
+    <div class="opt-row">
+      <span class="opt-label">Fruit to advance</span>
+      <span class="opt-control"><input type="number" id="opt-food-advance" min="1" max="19" value="5"></span>
+    </div>
+    <div class="opt-row">
+      <span class="opt-label">Fruit on screen</span>
+      <span class="opt-control"><input type="number" id="opt-food-count" min="1" max="5" value="3"></span>
+    </div>
+    <div class="opt-row">
+      <span class="opt-label">Snakes can collide</span>
+      <span class="opt-control"><button class="toggle-btn on" id="opt-collisions">ON</button></span>
+    </div>
+  </div>
+  <div id="lobby-ready-count"></div>
+  <button id="ready-btn">READY</button>
 </div>
 
 <div id="game-container">
@@ -212,6 +395,18 @@ canvas {
   const GRID_W = 40, GRID_H = 30;
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+
+  const NEON_COLORS = [
+    "#ff00ff", "#00ffff", "#ff3366", "#33ff66",
+    "#ffcc00", "#ff6600", "#66ccff", "#cc66ff",
+    "#00ff99", "#ff0066", "#33ccff", "#ffff00",
+  ];
+  const HEAD_AVATARS = {
+    angel: "\u{1F607}", devil: "\u{1F608}", "8ball": "\u{1F3B1}",
+    alien: "\u{1F47D}", skull: "\u{1F480}", robot: "\u{1F916}",
+    crown: "\u{1F451}", fire: "\u{1F525}", ghost: "\u{1F47B}",
+    cyclops: "\u{1F9FF}", star: "\u2B50", diamond: "\u{1F48E}",
+  };
 
   // Offscreen wall canvas
   const wallCanvas = document.createElement('canvas');
@@ -245,7 +440,6 @@ canvas {
 
   function playDeathSound() {
     const ac = ensureAudio();
-    // Noise burst + low tone
     const osc = ac.createOscillator();
     const gain = ac.createGain();
     osc.connect(gain);
@@ -258,7 +452,6 @@ canvas {
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
     osc.start(t);
     osc.stop(t + 0.35);
-    // Short noise burst
     const bufLen = ac.sampleRate * 0.12;
     const buf = ac.createBuffer(1, bufLen, ac.sampleRate);
     const data = buf.getChannelData(0);
@@ -283,12 +476,45 @@ canvas {
   let particles = [];
   let animFrame = 0;
   let wasAlive = true;
+  let selectedColor = NEON_COLORS[0];
+  let selectedAvatar = 'angel';
+  let isReady = false;
 
-  // ── Join ─────────────────────────────────────────────
+  // ── Build Pickers ────────────────────────────────────
+  const colorPicker = document.getElementById('color-picker');
+  NEON_COLORS.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'color-opt' + (i === 0 ? ' selected' : '');
+    el.style.background = c;
+    el.style.color = c;
+    el.onclick = () => {
+      colorPicker.querySelectorAll('.color-opt').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedColor = c;
+    };
+    colorPicker.appendChild(el);
+  });
+
+  const avatarPicker = document.getElementById('avatar-picker');
+  Object.entries(HEAD_AVATARS).forEach(([key, emoji], i) => {
+    const el = document.createElement('div');
+    el.className = 'avatar-opt' + (i === 0 ? ' selected' : '');
+    el.textContent = emoji;
+    el.onclick = () => {
+      avatarPicker.querySelectorAll('.avatar-opt').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedAvatar = key;
+    };
+    avatarPicker.appendChild(el);
+  });
+
+  // ── Screens ──────────────────────────────────────────
   const joinScreen = document.getElementById('join-screen');
+  const lobbyScreen = document.getElementById('lobby-screen');
   const gameContainer = document.getElementById('game-container');
   const nameInput = document.getElementById('name-input');
   const joinBtn = document.getElementById('join-btn');
+  const readyBtn = document.getElementById('ready-btn');
 
   function connect() {
     const name = nameInput.value.trim() || 'Player';
@@ -296,16 +522,21 @@ canvas {
     ws = new WebSocket(`${proto}//${location.host}/ws`);
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: 'join', name }));
+      ws.send(JSON.stringify({ type: 'join', name, color: selectedColor, head_avatar: selectedAvatar }));
     };
 
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
       if (msg.type === 'welcome') {
         myId = msg.player_id;
+        joinScreen.style.display = 'none';
+        lobbyScreen.style.display = 'block';
+      } else if (msg.type === 'lobby_state') {
+        updateLobby(msg.players, msg.game_options);
+      } else if (msg.type === 'game_start') {
         walls = msg.walls;
         renderWalls();
-        joinScreen.style.display = 'none';
+        lobbyScreen.style.display = 'none';
         gameContainer.style.display = 'block';
         requestAnimationFrame(draw);
       } else if (msg.type === 'state') {
@@ -313,7 +544,6 @@ canvas {
         currState = msg;
         lastStateTime = performance.now();
         processEatenEvents(msg.eaten_events || []);
-        // Detect local player death
         const me = myId && msg.players[myId];
         if (me && !me.alive && wasAlive) playDeathSound();
         wasAlive = me ? me.alive : true;
@@ -327,18 +557,90 @@ canvas {
     ws.onclose = () => {
       setTimeout(() => {
         joinScreen.style.display = 'block';
+        lobbyScreen.style.display = 'none';
         gameContainer.style.display = 'none';
         myId = null;
         currState = null;
         prevState = null;
+        isReady = false;
+        readyBtn.classList.remove('is-ready');
+        readyBtn.textContent = 'READY';
       }, 500);
     };
   }
 
   joinBtn.onclick = () => { ensureAudio(); connect(); };
   nameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') connect();
+    if (e.key === 'Enter') { ensureAudio(); connect(); }
   });
+
+  readyBtn.onclick = () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'ready' }));
+      isReady = !isReady;
+      readyBtn.classList.toggle('is-ready', isReady);
+      readyBtn.textContent = isReady ? 'READY ✓' : 'READY';
+    }
+  };
+
+  // ── Game Options ─────────────────────────────────────
+  const optFoodAdvance = document.getElementById('opt-food-advance');
+  const optFoodCount = document.getElementById('opt-food-count');
+  const optCollisions = document.getElementById('opt-collisions');
+
+  function sendGameOptions(partial) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'game_options', ...partial }));
+    }
+  }
+
+  optFoodAdvance.addEventListener('change', () => {
+    const v = parseInt(optFoodAdvance.value, 10);
+    if (v >= 1 && v <= 19) sendGameOptions({ food_to_advance: v });
+  });
+
+  optFoodCount.addEventListener('change', () => {
+    const v = parseInt(optFoodCount.value, 10);
+    if (v >= 1 && v <= 5) sendGameOptions({ food_count: v });
+  });
+
+  optCollisions.addEventListener('click', () => {
+    const current = optCollisions.classList.contains('on');
+    sendGameOptions({ collisions: !current });
+  });
+
+  function syncOptions(opts) {
+    if (!opts) return;
+    optFoodAdvance.value = opts.food_to_advance;
+    optFoodCount.value = opts.food_count;
+    if (opts.collisions) {
+      optCollisions.classList.add('on');
+      optCollisions.textContent = 'ON';
+    } else {
+      optCollisions.classList.remove('on');
+      optCollisions.textContent = 'OFF';
+    }
+  }
+
+  // ── Lobby ────────────────────────────────────────────
+  function updateLobby(players, gameOptions) {
+    const container = document.getElementById('lobby-players');
+    const readyCount = players.filter(p => p.ready).length;
+    document.getElementById('lobby-ready-count').textContent = `${readyCount}/${players.length} ready`;
+    container.innerHTML = players.map(p => {
+      const emoji = HEAD_AVATARS[p.head_avatar] || HEAD_AVATARS.angel;
+      const badge = p.ready
+        ? '<span class="lobby-badge ready">READY</span>'
+        : '<span class="lobby-badge not-ready">NOT READY</span>';
+      return `<div class="lobby-entry">
+        <span class="lobby-avatar">${emoji}</span>
+        <span class="color-swatch" style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${p.color}"></span>
+        <span class="lobby-name" style="color:${p.color}">${esc(p.name)}</span>
+        ${badge}
+      </div>`;
+    }).join('');
+    syncOptions(gameOptions);
+  }
 
   // ── Input ────────────────────────────────────────────
   const keyMap = {
@@ -365,7 +667,6 @@ canvas {
       wallCtx.fillRect(x * CELL, y * CELL, CELL, CELL);
     }
     wallCtx.shadowBlur = 0;
-    // Border highlight
     wallCtx.strokeStyle = '#3a3a6a';
     wallCtx.lineWidth = 0.5;
     for (const [x, y] of walls) {
@@ -426,7 +727,6 @@ canvas {
     document.getElementById('level-info').textContent = `LEVEL ${state.level}`;
     document.getElementById('food-counter').textContent = `FOOD: ${state.food_eaten}/${state.food_target}`;
 
-    // Player legend
     const entries = document.getElementById('legend-entries');
     const sorted = Object.entries(state.players)
       .map(([id, p]) => ({ id, ...p }))
@@ -435,10 +735,10 @@ canvas {
       const hearts = '\u2764'.repeat(Math.max(0, p.lives));
       const isMe = p.id === myId;
       const cls = (isMe ? ' me' : '') + (p.game_over ? ' dead' : '');
-      return `<div class="entry${cls}"><span class="color-swatch" style="background:${p.color}"></span><span class="pname" style="color:${p.color}">${esc(p.name)}</span><span class="lives">${hearts}</span><span class="pscore">${p.score}</span></div>`;
+      const emoji = HEAD_AVATARS[p.head_avatar] || '';
+      return `<div class="entry${cls}"><span class="color-swatch" style="background:${p.color}"></span><span style="font-size:0.9em">${emoji}</span><span class="pname" style="color:${p.color}">${esc(p.name)}</span><span class="lives">${hearts}</span><span class="pscore">${p.score}</span></div>`;
     }).join('');
 
-    // Death / game over messages
     const deathMsg = document.getElementById('death-msg');
     const gameoverMsg = document.getElementById('gameover-msg');
     const me = myId && state.players[myId];
@@ -446,7 +746,7 @@ canvas {
       deathMsg.style.display = 'none';
       gameoverMsg.style.display = 'block';
     } else if (me && !me.alive) {
-      deathMsg.textContent = `YOU DIED — ${me.lives} ${me.lives === 1 ? 'life' : 'lives'} left`;
+      deathMsg.textContent = `YOU DIED \u2014 ${me.lives} ${me.lives === 1 ? 'life' : 'lives'} left`;
       deathMsg.style.display = 'block';
       gameoverMsg.style.display = 'none';
     } else {
@@ -454,7 +754,6 @@ canvas {
       gameoverMsg.style.display = 'none';
     }
 
-    // Level countdown
     const overlay = document.getElementById('countdown-overlay');
     if (state.level_changing && state.level_change_at) {
       overlay.style.display = 'flex';
@@ -502,11 +801,9 @@ canvas {
 
     ctx.clearRect(0, 0, 800, 600);
 
-    // Background
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0, 0, 800, 600);
 
-    // Subtle grid
     ctx.strokeStyle = '#151515';
     ctx.lineWidth = 0.5;
     for (let x = 0; x <= 800; x += CELL) {
@@ -516,7 +813,6 @@ canvas {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(800, y); ctx.stroke();
     }
 
-    // Walls
     ctx.drawImage(wallCanvas, 0, 0);
 
     if (!currState) {
@@ -524,12 +820,11 @@ canvas {
       return;
     }
 
-    // Interpolation factor
-    const tickMs = 100; // 10 ticks/sec
+    const tickMs = 100;
     const elapsed = now - lastStateTime;
     const t = Math.min(elapsed / tickMs, 1);
 
-    // Food (pulsing glow)
+    // Food
     const pulse = 0.7 + 0.3 * Math.sin(now / 150);
     ctx.shadowColor = '#aaff00';
     for (const [fx, fy] of currState.food) {
@@ -564,12 +859,24 @@ canvas {
         ctx.globalAlpha = brightness;
         const pad = isHead ? 1 : 2;
         ctx.fillRect(sx * CELL + pad, sy * CELL + pad, CELL - pad * 2, CELL - pad * 2);
+
+        // Draw emoji on head
+        if (isHead && p.head_avatar) {
+          ctx.globalAlpha = 1;
+          ctx.shadowBlur = 0;
+          const emoji = HEAD_AVATARS[p.head_avatar];
+          if (emoji) {
+            ctx.font = `${CELL - 4}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, sx * CELL + CELL / 2, sy * CELL + CELL / 2 + 1);
+          }
+        }
       }
     }
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
 
-    // Particles on top
     drawParticles();
 
     requestAnimationFrame(draw);

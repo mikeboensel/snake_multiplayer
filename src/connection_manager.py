@@ -4,7 +4,7 @@ import json
 
 from fastapi import WebSocket
 
-from .constants import FOOD_TO_ADVANCE, GRID_W, GRID_H
+from .constants import GRID_W, GRID_H
 from .game import GameState
 
 
@@ -43,6 +43,7 @@ def build_state_msg(game: GameState) -> str:
         players_data[pid] = {
             "name": p.name,
             "color": p.color,
+            "head_avatar": p.head_avatar,
             "segments": p.segments,
             "score": p.score,
             "lives": p.lives,
@@ -56,8 +57,25 @@ def build_state_msg(game: GameState) -> str:
         "food": game.food,
         "level": game.level,
         "food_eaten": game.food_eaten,
-        "food_target": FOOD_TO_ADVANCE,
+        "food_target": game.game_options["food_to_advance"],
         "level_changing": game.level_changing,
         "level_change_at": game.level_change_at,
         "eaten_events": game.eaten_events,
+    })
+
+
+def build_lobby_msg(game: GameState) -> str:
+    players = []
+    for pid, p in game.players.items():
+        players.append({
+            "pid": pid,
+            "name": p.name,
+            "color": p.color,
+            "head_avatar": p.head_avatar,
+            "ready": pid in game.ready_players,
+        })
+    return json.dumps({
+        "type": "lobby_state",
+        "players": players,
+        "game_options": game.game_options,
     })

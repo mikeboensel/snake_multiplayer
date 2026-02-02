@@ -7,7 +7,7 @@ from typing import Optional
 from .constants import (
     GRID_W, GRID_H, FOOD_COUNT, FOOD_TO_ADVANCE,
     RESPAWN_DELAY, LEVEL_COUNTDOWN, TOTAL_LEVELS, MAX_LIVES,
-    DIRECTIONS, OPPOSITES, NEON_COLORS,
+    DIRECTIONS, OPPOSITES,
 )
 from .levels import build_level_walls
 from .models import PlayerState
@@ -22,13 +22,21 @@ class GameState:
         self.food_eaten = 0
         self.level_changing = False
         self.level_change_at: Optional[float] = None
-        self.color_index = 0
         self.eaten_events: list[tuple[int, int, str, str]] = []
+        self.started = False
+        self.ready_players: set[str] = set()
+        self.game_options: dict = {
+            "food_to_advance": FOOD_TO_ADVANCE,
+            "food_count": FOOD_COUNT,
+            "collisions": True,
+        }
 
-    def next_color(self) -> str:
-        c = NEON_COLORS[self.color_index % len(NEON_COLORS)]
-        self.color_index += 1
-        return c
+    def start_game(self):
+        self.started = True
+        self.ready_players.clear()
+        for p in self.players.values():
+            self.spawn_player(p)
+        self.spawn_food()
 
     def find_safe_spot(self, length=3, runway=10) -> Optional[list[tuple[int, int]]]:
         occupied = set()
@@ -102,7 +110,8 @@ class GameState:
         occupied.update(self.walls)
         occupied.update(self.food)
 
-        while len(self.food) < FOOD_COUNT:
+        target = self.game_options["food_count"]
+        while len(self.food) < target:
             attempts = 0
             while attempts < 500:
                 x = random.randint(1, GRID_W - 2)
@@ -129,6 +138,9 @@ class GameState:
         self.spawn_food()
 
     def tick(self):
+        if not self.started:
+            return
+
         now = time.time()
         self.eaten_events.clear()
 
@@ -164,18 +176,20 @@ class GameState:
             if head in p.segments[:-1]:
                 kills.add(pid)
                 continue
-            for other_pid, other_p in self.players.items():
-                if other_pid == pid or not other_p.alive:
-                    continue
-                if head in other_p.segments:
-                    kills.add(pid)
-                    break
+            if self.game_options["collisions"]:
+                for other_pid, other_p in self.players.items():
+                    if other_pid == pid or not other_p.alive:
+                        continue
+                    if head in other_p.segments:
+                        kills.add(pid)
+                        break
 
-        for pid1, head1 in new_heads.items():
-            for pid2, head2 in new_heads.items():
-                if pid1 < pid2 and head1 == head2:
-                    kills.add(pid1)
-                    kills.add(pid2)
+        if self.game_options["collisions"]:
+            for pid1, head1 in new_heads.items():
+                for pid2, head2 in new_heads.items():
+                    if pid1 < pid2 and head1 == head2:
+                        kills.add(pid1)
+                        kills.add(pid2)
 
         for pid in kills:
             p = self.players[pid]
@@ -203,6 +217,6 @@ class GameState:
 
         self.spawn_food()
 
-        if self.food_eaten >= FOOD_TO_ADVANCE:
+        if self.food_eaten >= self.game_options["food_to_advance"]:
             self.level_changing = True
             self.level_change_at = now + LEVEL_COUNTDOWN

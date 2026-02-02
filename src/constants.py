@@ -22,3 +22,10 @@ NEON_COLORS = [
     "#ffcc00", "#ff6600", "#66ccff", "#cc66ff",
     "#00ff99", "#ff0066", "#33ccff", "#ffff00",
 ]
+
+HEAD_AVATARS = {
+    "angel": "😇", "devil": "😈", "8ball": "🎱",
+    "alien": "👽", "skull": "💀", "robot": "🤖",
+    "crown": "👑", "fire": "🔥", "ghost": "👻",
+    "cyclops": "🧿", "star": "⭐", "diamond": "💎",
+}

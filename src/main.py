@@ -9,10 +9,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
-from .constants import GRID_W, GRID_H, TICK_RATE, TOTAL_LEVELS, DIRECTIONS
+from .constants import GRID_W, GRID_H, TICK_RATE, TOTAL_LEVELS, DIRECTIONS, NEON_COLORS, HEAD_AVATARS
 from .game import GameState
 from .models import PlayerState
-from .connection_manager import ConnectionManager, walls_to_list, build_state_msg
+from .connection_manager import ConnectionManager, walls_to_list, build_state_msg, build_lobby_msg
 
 
 @asynccontextmanager
@@ -43,19 +43,51 @@ async def websocket_endpoint(ws: WebSocket):
             msg = json.loads(raw)
             if msg["type"] == "join":
                 name = msg.get("name", "Player")[:16]
-                p = PlayerState(pid=player_id, name=name, color=game.next_color())
-                game.spawn_player(p)
+                color = msg.get("color", NEON_COLORS[0])
+                if color not in NEON_COLORS:
+                    color = NEON_COLORS[0]
+                head_avatar = msg.get("head_avatar", "angel")
+                if head_avatar not in HEAD_AVATARS:
+                    head_avatar = "angel"
+                p = PlayerState(pid=player_id, name=name, color=color, head_avatar=head_avatar)
                 game.players[player_id] = p
                 manager.connections[ws] = player_id
                 await ws.send_text(json.dumps({
                     "type": "welcome",
                     "player_id": player_id,
-                    "level": game.level,
-                    "walls": walls_to_list(game.walls),
-                    "grid": [GRID_W, GRID_H],
                 }))
+                await manager.broadcast(build_lobby_msg(game))
+            elif msg["type"] == "ready":
+                if player_id in game.players and not game.started:
+                    if player_id in game.ready_players:
+                        game.ready_players.discard(player_id)
+                    else:
+                        game.ready_players.add(player_id)
+                    await manager.broadcast(build_lobby_msg(game))
+                    # Check if all players are ready
+                    if (len(game.ready_players) >= 1
+                            and game.ready_players == set(game.players.keys())):
+                        game.start_game()
+                        await manager.broadcast(json.dumps({
+                            "type": "game_start",
+                            "level": game.level,
+                            "walls": walls_to_list(game.walls),
+                            "grid": [GRID_W, GRID_H],
+                        }))
+            elif msg["type"] == "game_options":
+                if player_id in game.players and not game.started:
+                    fta = msg.get("food_to_advance")
+                    if isinstance(fta, int) and 1 <= fta <= 19:
+                        game.game_options["food_to_advance"] = fta
+                    fc = msg.get("food_count")
+                    if isinstance(fc, int) and 1 <= fc <= 5:
+                        game.game_options["food_count"] = fc
+                    coll = msg.get("collisions")
+                    if isinstance(coll, bool):
+                        game.game_options["collisions"] = coll
+                    await manager.broadcast(build_lobby_msg(game))
             elif msg["type"] == "input":
-                if player_id in game.players:
+                if player_id in game.players and game.started:
                     d = msg.get("direction")
                     if d in DIRECTIONS:
                         game.players[player_id].next_direction = d
@@ -65,13 +97,29 @@ async def websocket_endpoint(ws: WebSocket):
         pass
     finally:
         manager.connections.pop(ws, None)
+        game.ready_players.discard(player_id)
         game.players.pop(player_id, None)
+        if not game.started:
+            await manager.broadcast(build_lobby_msg(game))
+            # Check if remaining players are all ready
+            if (len(game.players) >= 1
+                    and game.ready_players == set(game.players.keys())):
+                game.start_game()
+                await manager.broadcast(json.dumps({
+                    "type": "game_start",
+                    "level": game.level,
+                    "walls": walls_to_list(game.walls),
+                    "grid": [GRID_W, GRID_H],
+                }))
 
 
 async def game_loop():
     prev_level = game.level
-    game.spawn_food()
     while True:
+        if not game.started:
+            await asyncio.sleep(1 / TICK_RATE)
+            continue
+
         game.tick()
 
         if game.level != prev_level:

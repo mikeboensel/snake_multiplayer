@@ -11,6 +11,7 @@ class PlayerState:
     pid: str
     name: str
     color: str
+    head_avatar: str = "angel"
     segments: list = field(default_factory=list)
     direction: str = "right"
     next_direction: str = "right"
