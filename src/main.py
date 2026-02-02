@@ -375,5 +375,7 @@ async def game_loop():
 
 if __name__ == "__main__":
     import uvicorn
-    print("Snake server starting on http://localhost:8765")
-    uvicorn.run(app, host="0.0.0.0", port=8765)
+    port = int(os.getenv("PORT", "8765"))
+    host = os.getenv("HOST", "0.0.0.0")
+    print(f"Snake server starting on http://{host}:{port}")
+    uvicorn.run(app, host=host, port=port)
