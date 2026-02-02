@@ -20,6 +20,8 @@ class PlayerState:
     alive: bool = True
     game_over: bool = False
     respawn_at: Optional[float] = None
+    is_ai: bool = False
+    ai_decision_at: float = 0.0
 
     def head(self):
         return self.segments[0] if self.segments else None

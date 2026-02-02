@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .constants import GRID_W, GRID_H, TICK_RATE, TOTAL_LEVELS, DIRECTIONS, NEON_COLORS, HEAD_AVATARS, MAX_LIVES
 from .game import GameState
@@ -25,6 +26,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 game = GameState()
 manager = ConnectionManager()
+
+# Mount static files directory
+static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 HTML_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "index.html")
 
@@ -65,9 +70,10 @@ async def websocket_endpoint(ws: WebSocket):
                     else:
                         game.ready_players.add(player_id)
                     await manager.broadcast(build_lobby_msg(game))
-                    # Check if all players are ready
+                    # Check if all human players are ready (AI is always ready)
+                    human_players = {pid for pid, p in game.players.items() if not getattr(p, 'is_ai', False)}
                     if (len(game.ready_players) >= 1
-                            and game.ready_players == set(game.players.keys())):
+                            and game.ready_players == human_players):
                         game.start_game()
                         await manager.broadcast(json.dumps({
                             "type": "game_start",
@@ -90,6 +96,16 @@ async def websocket_endpoint(ws: WebSocket):
                     if isinstance(lives, int) and 1 <= lives <= 9:
                         game.game_options["lives"] = lives
                     await manager.broadcast(build_lobby_msg(game))
+            elif msg["type"] == "add_ai":
+                if player_id in game.players and not game.started:
+                    ai_id = game.add_ai()
+                    await manager.broadcast(build_lobby_msg(game))
+            elif msg["type"] == "remove_ai":
+                if player_id in game.players and not game.started:
+                    ai_id = msg.get("ai_id")
+                    if ai_id:
+                        game.remove_ai(ai_id)
+                        await manager.broadcast(build_lobby_msg(game))
             elif msg["type"] == "input":
                 if player_id in game.players and game.started:
                     d = msg.get("direction")
@@ -114,6 +130,9 @@ async def websocket_endpoint(ws: WebSocket):
                         p.game_over = False
                         p.segments = []
                         p.respawn_at = None
+                        # Reset AI decision timers
+                        if hasattr(p, 'ai_decision_at'):
+                            p.ai_decision_at = 0.0
                     await manager.broadcast(json.dumps({"type": "return_to_lobby"}))
     except WebSocketDisconnect:
         pass
@@ -136,9 +155,10 @@ async def websocket_endpoint(ws: WebSocket):
             game.ready_players.clear()
         if not game.started:
             await manager.broadcast(build_lobby_msg(game))
-            # Check if remaining players are all ready
+            # Check if remaining human players are all ready
+            human_players = {pid for pid, p in game.players.items() if not getattr(p, 'is_ai', False)}
             if (len(game.players) >= 1
-                    and game.ready_players == set(game.players.keys())):
+                    and game.ready_players == human_players):
                 game.start_game()
                 await manager.broadcast(json.dumps({
                     "type": "game_start",

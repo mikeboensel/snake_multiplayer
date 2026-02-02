@@ -50,6 +50,7 @@ def build_state_msg(game: GameState) -> str:
             "alive": p.alive,
             "game_over": p.game_over,
             "direction": p.direction,
+            "is_ai": getattr(p, "is_ai", False),
         }
     return json.dumps({
         "type": "state",
@@ -73,6 +74,7 @@ def build_lobby_msg(game: GameState) -> str:
             "color": p.color,
             "head_avatar": p.head_avatar,
             "ready": pid in game.ready_players,
+            "is_ai": getattr(p, "is_ai", False),
         })
     return json.dumps({
         "type": "lobby_state",
