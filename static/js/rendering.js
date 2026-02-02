@@ -284,7 +284,10 @@ function drawLoop(now) {
       const pad = isHead ? 1 : 2;
 
       const warped = settings.areaWarp.enabled ? applyWarpToCoordinate(sx * CELL, sy * CELL) : { x: sx * CELL, y: sy * CELL };
-      ctx.fillRect(warped.x + pad, warped.y + pad, CELL - pad * 2, CELL - pad * 2);
+
+      if (!isHead) {
+        ctx.fillRect(warped.x + pad, warped.y + pad, CELL - pad * 2, CELL - pad * 2);
+      }
 
       // Draw emoji or custom head on snake head
       if (isHead) {
@@ -292,21 +295,28 @@ function drawLoop(now) {
         ctx.shadowBlur = 0;
         const textPos = settings.areaWarp.enabled ? applyWarpToCoordinate(sx * CELL + CELL / 2, sy * CELL + CELL / 2) : { x: sx * CELL + CELL / 2, y: sy * CELL + CELL / 2 };
 
+        // Calculate dynamic head size
+        const baseSize = CELL - 4;
+        const avatarScale = settings.avatarSize?.scale || 1;
+        const headSize = Math.round(baseSize * avatarScale);
+        const radius = headSize / 2;
+
         if (p.custom_head) {
           // Draw custom head image
           const img = preloadCustomHeadImage(pid, p.custom_head);
           if (img.complete) {
             ctx.save();
             ctx.beginPath();
-            ctx.arc(textPos.x, textPos.y, CELL / 2 - 2, 0, Math.PI * 2);
+            ctx.arc(textPos.x, textPos.y, radius, 0, Math.PI * 2);
             ctx.clip();
-            ctx.drawImage(img, textPos.x - CELL / 2 + 2, textPos.y - CELL / 2 + 2, CELL - 4, CELL - 4);
+            const offset = headSize / 2;
+            ctx.drawImage(img, textPos.x - offset, textPos.y - offset, headSize, headSize);
             ctx.restore();
           } else {
             // Fallback to emoji if image not loaded
             const emoji = HEAD_AVATARS[p.head_avatar];
             if (emoji) {
-              ctx.font = `${CELL - 4}px serif`;
+              ctx.font = `${headSize}px serif`;
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
               ctx.fillText(emoji, textPos.x, textPos.y + 1);
@@ -316,7 +326,7 @@ function drawLoop(now) {
           // Draw emoji
           const emoji = HEAD_AVATARS[p.head_avatar];
           if (emoji) {
-            ctx.font = `${CELL - 4}px serif`;
+            ctx.font = `${headSize}px serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(emoji, textPos.x, textPos.y + 1);

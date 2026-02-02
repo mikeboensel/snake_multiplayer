@@ -33,6 +33,10 @@ export const defaultSettings = {
     enabled: true,
     intensity: 1.0,
   },
+  avatarSize: {
+    scale: 1.5,
+    range: [1.0, 3.0],
+  },
 
   // Audio SFX
   sfx: {

@@ -43,13 +43,18 @@ export function updateLobby(players, gameOptions) {
   const aiPlayers = players.filter(p => p.is_ai);
   const readyCount = humanPlayers.filter(p => p.ready).length;
   document.getElementById('lobby-ready-count').textContent = `${readyCount}/${humanPlayers.length} ready`;
+
+  const avatarScale = settings.avatarSize?.scale || 1;
+  const imageSize = Math.round(24 * avatarScale);
+  const emojiSize = (1.4 * avatarScale).toFixed(1);
+
   container.innerHTML = humanPlayers.map(p => {
     let avatarHtml;
     if (p.custom_head) {
-      avatarHtml = `<img src="${esc(p.custom_head)}" class="lobby-avatar-img" alt="">`;
+      avatarHtml = `<img src="${esc(p.custom_head)}" style="width:${imageSize}px;height:${imageSize}px;border-radius:50%;" alt="">`;
     } else {
       const emoji = HEAD_AVATARS[p.head_avatar] || HEAD_AVATARS.angel;
-      avatarHtml = `<span class="lobby-avatar">${emoji}</span>`;
+      avatarHtml = `<span style="font-size:${emojiSize}em">${emoji}</span>`;
     }
 
     let badge;
@@ -186,6 +191,11 @@ export function updateHUD(state) {
   const sorted = Object.entries(state.players)
     .map(([id, p]) => ({ id, ...p }))
     .sort((a, b) => b.score - a.score);
+
+  const avatarScale = settings.avatarSize?.scale || 1;
+  const imageSize = Math.round(14 * avatarScale);
+  const emojiSize = (0.9 * avatarScale).toFixed(1);
+
   entries.innerHTML = sorted.map(p => {
     const hearts = '\u2764'.repeat(Math.max(0, p.lives));
     const isMe = p.id === window.gameState?.myId;
@@ -193,10 +203,10 @@ export function updateHUD(state) {
 
     let avatarHtml;
     if (p.custom_head) {
-      avatarHtml = `<img src="${esc(p.custom_head)}" style="width:14px;height:14px;border-radius:50%;" alt="">`;
+      avatarHtml = `<img src="${esc(p.custom_head)}" style="width:${imageSize}px;height:${imageSize}px;border-radius:50%;" alt="">`;
     } else {
       const emoji = HEAD_AVATARS[p.head_avatar] || '';
-      avatarHtml = `<span style="font-size:0.9em">${emoji}</span>`;
+      avatarHtml = `<span style="font-size:${emojiSize}em">${emoji}</span>`;
     }
 
     const aiBadge = p.is_ai ? '<span style="color:#fc0;font-size:0.7em;margin-left:2px">AI</span>' : '';
@@ -350,7 +360,7 @@ export function handlePauseState(pausedPlayers) {
     } else {
       pauseTitle.textContent = 'WAITING FOR PLAYERS';
       pauseHint.textContent = `Paused: ${otherPaused.join(', ')}`;
-      if (settingsPanel) settingsPanel.style.display = 'block';
+      if (settingsPanel) settingsPanel.style.display = 'none';
       if (quitBtn) quitBtn.textContent = 'QUIT TO LOBBY';
     }
   } else {
@@ -585,6 +595,12 @@ export function setupSettingsUI() {
   bindSlider('setting-glow-intensity', 'val-glow-intensity',
     () => Math.round(settings.glow.intensity * 100),
     v => settings.glow.intensity = v / 100,
+    v => `${v}%`);
+
+  // Avatar Size
+  bindSlider('setting-avatar-size', 'val-avatar-size',
+    () => Math.round((settings.avatarSize?.scale || 1.5) * 100),
+    v => settings.avatarSize.scale = v / 100,
     v => `${v}%`);
 
   // Audio
