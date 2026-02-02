@@ -149,7 +149,17 @@ export function syncOptions(opts) {
 
 // ── HUD ──────────────────────────────────────────────
 export function updateHUD(state) {
-  document.getElementById('level-info').textContent = `LEVEL ${state.level}`;
+  // Track spectator state
+  if (state.isSpectating === undefined) {
+    state.isSpectating = false;
+  }
+
+  const levelInfo = document.getElementById('level-info');
+  if (state.isSpectating) {
+    levelInfo.textContent = 'SPECTATING';
+  } else {
+    levelInfo.textContent = `LEVEL ${state.level}`;
+  }
   document.getElementById('food-counter').textContent = `FOOD: ${state.food_eaten}/${state.food_target}`;
 
   const entries = document.getElementById('legend-entries');

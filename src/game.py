@@ -190,7 +190,7 @@ class GameState:
 
         new_heads = {}
         for pid, p in self.players.items():
-            if not p.alive:
+            if not p.alive or not p.segments:
                 continue
             dx, dy = DIRECTIONS[p.direction]
             hx, hy = p.segments[0]

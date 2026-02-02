@@ -57,6 +57,16 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       startGame();
       break;
 
+    case 'game_in_progress':
+      // Late joiner - spectate existing game
+      state.isSpectating = true;
+      state.walls = msg.walls;
+      renderWalls();
+      lobbyScreen.style.display = 'none';
+      gameContainer.style.display = 'block';
+      startGame();
+      break;
+
     case 'state':
       state.prevState = state.currState;
       state.currState = msg;
@@ -83,6 +93,7 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       state.prevState = null;
       state.isReady = false;
       state.isPaused = false;
+      state.isSpectating = false;
       readyBtn.classList.remove('is-ready');
       readyBtn.textContent = 'READY';
       document.getElementById('death-msg').style.display = 'none';

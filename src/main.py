@@ -62,8 +62,22 @@ async def websocket_endpoint(ws: WebSocket):
                     "type": "welcome",
                     "player_id": player_id,
                 }))
-                await manager.broadcast(build_lobby_msg(game))
+
+                # If game is in progress, send game state for spectating
+                if game.started:
+                    await ws.send_text(json.dumps({
+                        "type": "game_in_progress",
+                        "level": game.level,
+                        "walls": walls_to_list(game.walls),
+                        "grid": [GRID_W, GRID_H],
+                    }))
+                    # Send current state immediately
+                    await ws.send_text(build_state_msg(game))
+                else:
+                    # Only broadcast to lobby if game hasn't started
+                    await manager.broadcast(build_lobby_msg(game))
             elif msg["type"] == "ready":
+                # Ignore ready messages during a game - must wait for game to end
                 if player_id in game.players and not game.started:
                     if player_id in game.ready_players:
                         game.ready_players.discard(player_id)
