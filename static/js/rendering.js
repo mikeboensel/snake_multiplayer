@@ -5,6 +5,21 @@ import { playEatSound, playDeathSound } from './audio.js';
 import { updateHUD } from './ui.js';
 import { settings } from './effects-settings.js';
 
+// Custom head image cache
+const customHeadImages = new Map();  // player_id -> HTMLImageElement
+
+export function preloadCustomHeadImage(playerId, dataUrl) {
+  if (customHeadImages.has(playerId)) return customHeadImages.get(playerId);
+  const img = new Image();
+  img.src = dataUrl;
+  customHeadImages.set(playerId, img);
+  return img;
+}
+
+export function clearCustomHeadCache() {
+  customHeadImages.clear();
+}
+
 // ── Wall Rendering (offscreen) ───────────────────────
 export function renderWalls() {
   wallCtx.clearRect(0, 0, 800, 600);
@@ -271,17 +286,41 @@ function drawLoop(now) {
       const warped = settings.areaWarp.enabled ? applyWarpToCoordinate(sx * CELL, sy * CELL) : { x: sx * CELL, y: sy * CELL };
       ctx.fillRect(warped.x + pad, warped.y + pad, CELL - pad * 2, CELL - pad * 2);
 
-      // Draw emoji on head
-      if (isHead && p.head_avatar) {
+      // Draw emoji or custom head on snake head
+      if (isHead) {
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
-        const emoji = HEAD_AVATARS[p.head_avatar];
-        if (emoji) {
-          ctx.font = `${CELL - 4}px serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          const textPos = settings.areaWarp.enabled ? applyWarpToCoordinate(sx * CELL + CELL / 2, sy * CELL + CELL / 2) : { x: sx * CELL + CELL / 2, y: sy * CELL + CELL / 2 };
-          ctx.fillText(emoji, textPos.x, textPos.y + 1);
+        const textPos = settings.areaWarp.enabled ? applyWarpToCoordinate(sx * CELL + CELL / 2, sy * CELL + CELL / 2) : { x: sx * CELL + CELL / 2, y: sy * CELL + CELL / 2 };
+
+        if (p.custom_head) {
+          // Draw custom head image
+          const img = preloadCustomHeadImage(pid, p.custom_head);
+          if (img.complete) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(textPos.x, textPos.y, CELL / 2 - 2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(img, textPos.x - CELL / 2 + 2, textPos.y - CELL / 2 + 2, CELL - 4, CELL - 4);
+            ctx.restore();
+          } else {
+            // Fallback to emoji if image not loaded
+            const emoji = HEAD_AVATARS[p.head_avatar];
+            if (emoji) {
+              ctx.font = `${CELL - 4}px serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(emoji, textPos.x, textPos.y + 1);
+            }
+          }
+        } else if (p.head_avatar) {
+          // Draw emoji
+          const emoji = HEAD_AVATARS[p.head_avatar];
+          if (emoji) {
+            ctx.font = `${CELL - 4}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, textPos.x, textPos.y + 1);
+          }
         }
       }
     }

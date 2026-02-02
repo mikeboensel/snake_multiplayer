@@ -15,6 +15,17 @@
   <div id="color-picker"></div>
   <div class="picker-label">PICK YOUR HEAD</div>
   <div id="avatar-picker"></div>
+  <div class="picker-label">OR UPLOAD CUSTOM HEAD</div>
+  <div id="custom-avatar-section">
+    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+    <button id="avatar-upload-btn" class="upload-btn">
+      <span class="upload-icon">📷</span> UPLOAD IMAGE
+    </button>
+    <div id="custom-avatar-preview" class="avatar-preview hidden">
+      <canvas id="preview-canvas" width="60" height="60"></canvas>
+      <button id="clear-custom-avatar" class="clear-btn">✕</button>
+    </div>
+  </div>
   <button id="join-btn">JOIN LOBBY</button>
   <div class="hint">Arrow keys or WASD to move</div>
 </div>
@@ -83,6 +94,11 @@
     <span class="level-info" id="level-info">LEVEL 1</span>
     <span class="food-counter" id="food-counter">FOOD: 0/5</span>
   </div>
+  <div id="spectator-banner">
+    <span class="spectator-icon">👁</span>
+    <span class="spectator-text">YOU ARE SPECTATING</span>
+    <span class="spectator-hint">Game in progress — watching mode</span>
+  </div>
   <canvas id="game" width="800" height="600"></canvas>
   <div id="legend"><h3>PLAYERS</h3><div id="legend-entries"></div></div>
   <div id="countdown-overlay">
@@ -96,7 +112,7 @@
     <div class="pause-hint">Press ESC to resume</div>
 
     <!-- SETTINGS PANEL -->
-    <div class="settings-panel">
+    <div class="settings-panel" id="settings-panel">
       <div class="settings-section">
         <h3>VISUAL EFFECTS</h3>
 
@@ -304,6 +320,21 @@
     </div>
 
     <button id="pause-quit-btn">QUIT TO LOBBY</button>
+  </div>
+</div>
+
+<!-- Crop Modal -->
+<div id="crop-modal" class="modal hidden">
+  <div class="modal-content">
+    <h3>CROP YOUR HEAD</h3>
+    <div class="crop-container">
+      <canvas id="crop-canvas"></canvas>
+      <div id="crop-overlay"></div>
+    </div>
+    <div class="crop-controls">
+      <button id="crop-cancel">CANCEL</button>
+      <button id="crop-confirm">CONFIRM</button>
+    </div>
   </div>
 </div>
 

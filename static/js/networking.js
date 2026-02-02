@@ -9,12 +9,20 @@ export function connect(nameInput, joinScreen, lobbyScreen, gameContainer, ready
   state.ws = new WebSocket(`${proto}//${location.host}/ws`);
 
   state.ws.onopen = () => {
-    state.ws.send(JSON.stringify({
+    const joinMsg = {
       type: 'join',
       name,
       color: state.selectedColor,
-      head_avatar: state.selectedAvatar
-    }));
+    };
+
+    if (state.customHeadData) {
+      joinMsg.custom_head = state.customHeadData;
+      joinMsg.head_avatar = null;
+    } else {
+      joinMsg.head_avatar = state.selectedAvatar;
+    }
+
+    state.ws.send(JSON.stringify(joinMsg));
   };
 
   state.ws.onmessage = (e) => {
@@ -31,6 +39,7 @@ export function connect(nameInput, joinScreen, lobbyScreen, gameContainer, ready
       state.currState = null;
       state.prevState = null;
       state.isReady = false;
+      state.customHeadData = null;
       readyBtn.classList.remove('is-ready');
       readyBtn.textContent = 'READY';
     }, 500);
@@ -51,6 +60,8 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
 
     case 'game_start':
       state.walls = msg.walls;
+      state.myLocation = 'playing';
+      state.isSpectating = false;
       renderWalls();
       lobbyScreen.style.display = 'none';
       gameContainer.style.display = 'block';
@@ -60,6 +71,7 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
     case 'game_in_progress':
       // Late joiner - spectate existing game
       state.isSpectating = true;
+      state.myLocation = 'spectating';
       state.walls = msg.walls;
       renderWalls();
       lobbyScreen.style.display = 'none';
@@ -89,6 +101,17 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       // Local player death handling for UI
       const me = state.myId && msg.players[state.myId];
       state.wasAlive = me ? me.alive : true;
+      // If local player is in the state but game_over, they're now spectating
+      if (me && me.game_over && state.myLocation === 'playing') {
+        state.myLocation = 'spectating';
+        state.isSpectating = true;
+      }
+      // If local player is not in the state anymore, they're in lobby or spectating
+      if (state.myLocation === 'playing' && !me && state.myId) {
+        // Player was removed from state (moved to spectating by server)
+        state.myLocation = 'spectating';
+        state.isSpectating = true;
+      }
       break;
 
     case 'level_change':
@@ -109,6 +132,50 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       state.iAmPaused = false;
       state.pausedPlayers.clear();
       state.isSpectating = false;
+      state.myLocation = 'lobby';
+      readyBtn.classList.remove('is-ready');
+      readyBtn.textContent = 'READY';
+      document.getElementById('death-msg').style.display = 'none';
+      document.getElementById('gameover-msg').style.display = 'none';
+      document.getElementById('pause-menu').style.display = 'none';
+      break;
+
+    case 'move_to_lobby':
+      // Move only this client to lobby (game continues for others)
+      gameContainer.style.display = 'none';
+      lobbyScreen.style.display = 'block';
+      state.currState = null;
+      state.prevState = null;
+      state.isReady = false;
+      state.iAmPaused = false;
+      state.pausedPlayers.clear();
+      state.isSpectating = false;
+      state.myLocation = 'lobby';
+      readyBtn.classList.remove('is-ready');
+      readyBtn.textContent = 'READY';
+      document.getElementById('death-msg').style.display = 'none';
+      document.getElementById('gameover-msg').style.display = 'none';
+      document.getElementById('pause-menu').style.display = 'none';
+      break;
+
+    case 'player_location_changed':
+      if (msg.player_id === state.myId) {
+        state.myLocation = msg.location;
+      }
+      // Update lobby UI will be called via lobby_state message
+      break;
+
+    case 'game_end':
+      // Everyone back to lobby (game ended because no active players)
+      gameContainer.style.display = 'none';
+      lobbyScreen.style.display = 'block';
+      state.currState = null;
+      state.prevState = null;
+      state.isReady = false;
+      state.iAmPaused = false;
+      state.pausedPlayers.clear();
+      state.isSpectating = false;
+      state.myLocation = 'lobby';
       readyBtn.classList.remove('is-ready');
       readyBtn.textContent = 'READY';
       document.getElementById('death-msg').style.display = 'none';

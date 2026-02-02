@@ -10,7 +10,7 @@ from .constants import (
     DIRECTIONS, OPPOSITES, NEON_COLORS, HEAD_AVATARS,
 )
 from .levels import build_level_walls
-from .models import PlayerState
+from .models import PlayerState, PlayerLocation
 
 AI_NAMES = ["Botty", "Snaker", "Viper", "Python", "Cobra", "Mamba", "Rattler", "Noodle"]
 
@@ -53,6 +53,22 @@ class GameState:
             p.lives = lives
             self.spawn_player(p)
         self.spawn_food()
+
+    @property
+    def has_active_players(self) -> bool:
+        """Returns True if any human player is currently playing."""
+        return any(
+            not p.is_ai and p.location == PlayerLocation.PLAYING
+            for p in self.players.values()
+        )
+
+    def get_playing_players(self) -> list[PlayerState]:
+        """Returns all players who should be in the game (playing state)."""
+        return [p for p in self.players.values() if p.location == PlayerLocation.PLAYING]
+
+    def get_spectators(self) -> list[PlayerState]:
+        """Returns all spectators."""
+        return [p for p in self.players.values() if p.location == PlayerLocation.SPECTATING]
 
     def find_safe_spot(self, length=3, runway=10) -> Optional[list[tuple[int, int]]]:
         occupied = set()
@@ -229,6 +245,9 @@ class GameState:
             else:
                 p.game_over = True
                 p.respawn_at = None
+                # Move human players to spectating when they lose all lives
+                if not p.is_ai:
+                    p.location = PlayerLocation.SPECTATING
 
         for pid, head in new_heads.items():
             if pid in kills:

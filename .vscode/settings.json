@@ -1,0 +1,78 @@
+//
+{
+    // I've never used this for anything. Its just another prompt I have to
+    // click enter thru when running tasks. Deactivate.
+    "task.problemMatchers.neverPrompt": true,
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
+    "git.postCommitCommand": "sync",
+    // Refactoring
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    // Formatters
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnType": true,
+    "prettier.configPath": ".prettierrc",
+    "prettier.requireConfig": true,
+    "[javascript]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[html]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    // Use ty exclusively for type checking (not code completion, hover, go to definition, etc.)
+    "ty.disableLanguageServices": true,
+    // Biome extension configuration (for JS/TS)
+    // Couldn't be found without being explicitly set. Couldn't use ${workspaceFolder} here (unsure why)
+    "biome.configurationPath": "frontend/biome.json",
+    "biome.lsp.bin": "frontend/node_modules/@biomejs/biome/bin/biome",
+    "biome.enabled": true,
+    // Python interpreter configuration
+    "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python3",
+    "python.terminal.activateEnvironment": true,
+    // I want to see everything.
+    "search.exclude": {},
+    "files.exclude": {},
+    "search.useIgnoreFiles": false,
+    /* Ran into issues with the number of open files within the devcontainer. Many of the
+    files were due to cursor watching for changes. We remove dependencies and other
+    non-application files here (they shouldn't be changing).
+
+    For future debugging purposes:
+    - `ulimit -n` - Shows the Container's open file limit
+    - `lsof | wc -l` - Shows the current number of open files
+    Prior to the change below we had 400k+ open files. Now its 88k. (Note: This is a point in time measure and will change over time.)
+    */
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/**": true,
+        "**/.venv/**": true,
+        "**/__pycache__/**": true
+    },
+    // https://code.visualstudio.com/docs/python/testing
+    "python.testing.pytestArgs": [
+        "backend" // look in the backend directory for tests
+    ],
+    "python.testing.unittestEnabled": false, // we don't use `unittest`
+    "python.testing.pytestEnabled": true // we use `pytest`
+}

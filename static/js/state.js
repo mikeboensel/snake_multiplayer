@@ -11,9 +11,11 @@ export const state = {
   wasAlive: true,
   selectedColor: null,
   selectedAvatar: 'angel',
+  customHeadData: null,  // Base64 data URL or null
   isReady: false,
   iAmPaused: false,
   pausedPlayers: new Set(),
+  myLocation: 'lobby',  // 'lobby', 'playing', 'spectating'
 };
 
 // Canvas references

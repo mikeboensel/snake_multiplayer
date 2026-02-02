@@ -1,0 +1,36 @@
+{
+  "recommendations": [ /**
+  ** Python **
+  */
+    "charliermarsh.ruff", // Python Linting/Formatting (https://github.com/astral-sh/ruff)
+    "astral-sh.ty", // Python Type Checking (https://github.com/astral-sh/ty)
+    "ms-python.python", // Python Language Support
+    "ms-python.debugpy", // Python Debugging
+    "oderwat.indent-rainbow", // Rainbow Coloring for tabs (easier to visually parse code blocks) (https://github.com/oderwat/vscode-indent-rainbow)
+    /**
+     ** JS/TS **
+     */
+    "ambar.bundle-size", // JS/TS Bundle Size Analysis inline (How expensive are my dependencies?) (https://github.com/ambar/vscode-bundle-size)
+    "yoavbls.pretty-ts-errors", // Same content, much better presentation
+    "vitest.explorer", // Our test runner. Provides a panel view of the tests + ability to run/debug via a play button in the code gutter.
+    /**
+     ** Git + History **
+     */
+    "eamodio.gitlens", // GitLens, beautiful inline git blame info, graph is unfortunately paywall gated
+    "mhutchie.git-graph", // Fills in the gap GitLens has (https://github.com/mhutchie/vscode-git-graph)
+    /**
+     ** Container Tools **
+     */
+    "ms-azuretools.vscode-containers", //Container Tools (nice to not have to always use the CLI)
+    "anysphere.remote-containers", //DevContainers (Cursor style....)
+    /**
+     ** Misc **
+     */
+    // Quickly change the VSCode frame coloring to distinguish between workspaces (dev, prod, etc.) (https://github.com/johnpapa/vscode-peacock)
+    "johnpapa.vscode-peacock",
+    "ms-playwright.playwright", // Running/debugging/recording browser based tests.
+    "tamasfe.even-better-toml", // TOML syntax highlighting (https://github.com/tamasfe/taplo)
+    "gruntfuggly.todo-tree", // Tree view of TODOs, FIXMEs, etc. (https://github.com/Gruntfuggly/todo-tree)
+    "edwinhuish.better-comments-next" // Comment highlighting (https://github.com/edwinhuish/better-comments-next)
+  ]
+}

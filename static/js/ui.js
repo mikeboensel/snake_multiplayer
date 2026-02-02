@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { NEON_COLORS, HEAD_AVATARS } from './constants.js';
 import { sendGameOptions, sendReady, sendAddAI, sendRemoveAI, sendReturnToLobby, sendPause, sendInput } from './networking.js';
 import { settings, saveSettings, resetSettings } from './effects-settings.js';
+import { ImageProcessor, CropTool } from './image-processor.js';
 
 // ── Build Pickers ────────────────────────────────────
 export function buildPickers() {
@@ -43,12 +44,27 @@ export function updateLobby(players, gameOptions) {
   const readyCount = humanPlayers.filter(p => p.ready).length;
   document.getElementById('lobby-ready-count').textContent = `${readyCount}/${humanPlayers.length} ready`;
   container.innerHTML = humanPlayers.map(p => {
-    const emoji = HEAD_AVATARS[p.head_avatar] || HEAD_AVATARS.angel;
-    const badge = p.ready
-      ? '<span class="lobby-badge ready">READY</span>'
-      : '<span class="lobby-badge not-ready">NOT READY</span>';
+    let avatarHtml;
+    if (p.custom_head) {
+      avatarHtml = `<img src="${esc(p.custom_head)}" class="lobby-avatar-img" alt="">`;
+    } else {
+      const emoji = HEAD_AVATARS[p.head_avatar] || HEAD_AVATARS.angel;
+      avatarHtml = `<span class="lobby-avatar">${emoji}</span>`;
+    }
+
+    let badge;
+    if (p.location === 'playing') {
+      badge = '<span class="lobby-badge playing">PLAYING</span>';
+    } else if (p.location === 'spectating') {
+      badge = '<span class="lobby-badge spectating">SPECTATING</span>';
+    } else if (p.ready) {
+      badge = '<span class="lobby-badge ready">READY</span>';
+    } else {
+      badge = '<span class="lobby-badge not-ready">NOT READY</span>';
+    }
+
     return `<div class="lobby-entry">
-      <span class="lobby-avatar">${emoji}</span>
+      ${avatarHtml}
       <span class="color-swatch" style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${p.color}"></span>
       <span class="lobby-name" style="color:${p.color}">${esc(p.name)}</span>
       ${badge}
@@ -156,10 +172,13 @@ export function updateHUD(state) {
   }
 
   const levelInfo = document.getElementById('level-info');
+  const spectatorBanner = document.getElementById('spectator-banner');
   if (state.isSpectating) {
     levelInfo.textContent = 'SPECTATING';
+    spectatorBanner.classList.add('visible');
   } else {
     levelInfo.textContent = `LEVEL ${state.level}`;
+    spectatorBanner.classList.remove('visible');
   }
   document.getElementById('food-counter').textContent = `FOOD: ${state.food_eaten}/${state.food_target}`;
 
@@ -171,9 +190,18 @@ export function updateHUD(state) {
     const hearts = '\u2764'.repeat(Math.max(0, p.lives));
     const isMe = p.id === window.gameState?.myId;
     const cls = (isMe ? ' me' : '') + (p.game_over ? ' dead' : '');
-    const emoji = HEAD_AVATARS[p.head_avatar] || '';
+
+    let avatarHtml;
+    if (p.custom_head) {
+      avatarHtml = `<img src="${esc(p.custom_head)}" style="width:14px;height:14px;border-radius:50%;" alt="">`;
+    } else {
+      const emoji = HEAD_AVATARS[p.head_avatar] || '';
+      avatarHtml = `<span style="font-size:0.9em">${emoji}</span>`;
+    }
+
     const aiBadge = p.is_ai ? '<span style="color:#fc0;font-size:0.7em;margin-left:2px">AI</span>' : '';
-    return `<div class="entry${cls}"><span class="color-swatch" style="background:${p.color}"></span><span style="font-size:0.9em">${emoji}</span><span class="pname" style="color:${p.color}">${esc(p.name)}</span>${aiBadge}<span class="lives">${hearts}</span><span class="pscore">${p.score}</span></div>`;
+    const spectatorBadge = (isMe && state.isSpectating) ? '<span class="spectator-badge">SPECTATOR</span>' : '';
+    return `<div class="entry${cls}"><span class="color-swatch" style="background:${p.color}"></span>${avatarHtml}<span class="pname" style="color:${p.color}">${esc(p.name)}</span>${aiBadge}${spectatorBadge}<span class="lives">${hearts}</span><span class="pscore">${p.score}</span></div>`;
   }).join('');
 
   const deathMsg = document.getElementById('death-msg');
@@ -217,6 +245,9 @@ export function setupEventListeners(nameInput, joinScreen, lobbyScreen, gameCont
   const pauseHint = pauseMenu?.querySelector('.pause-hint');
   const pauseQuitBtn = document.getElementById('pause-quit-btn');
 
+  // Setup custom avatar upload
+  setupCustomAvatarUpload();
+
   // Track pause state (synced with server)
   state.iAmPaused = false;
   state.pausedPlayers = new Set();
@@ -224,6 +255,7 @@ export function setupEventListeners(nameInput, joinScreen, lobbyScreen, gameCont
   function togglePause() {
     // Only allow pause when in game and not in lobby
     if (gameContainer.style.display !== 'block') return;
+    if (state.isSpectating) return; // Spectators cannot pause
     sendPause();
   }
 
@@ -292,6 +324,8 @@ export function handlePauseState(pausedPlayers) {
   const pauseMenu = document.getElementById('pause-menu');
   const pauseTitle = pauseMenu?.querySelector('h2');
   const pauseHint = pauseMenu?.querySelector('.pause-hint');
+  const settingsPanel = document.getElementById('settings-panel');
+  const quitBtn = document.getElementById('pause-quit-btn');
 
   const otherPaused = Array.from(state.pausedPlayers)
     .filter(pid => pid !== state.myId)
@@ -305,9 +339,19 @@ export function handlePauseState(pausedPlayers) {
     if (state.iAmPaused) {
       pauseTitle.textContent = 'YOU ARE PAUSED';
       pauseHint.textContent = 'Press ESC to unpause yourself';
+      if (settingsPanel) settingsPanel.style.display = 'block';
+      if (quitBtn) quitBtn.textContent = 'QUIT TO LOBBY';
+    } else if (state.myLocation === 'spectating') {
+      // Spectators see simplified pause menu
+      pauseTitle.textContent = 'GAME PAUSED';
+      pauseHint.textContent = `Waiting for: ${otherPaused.join(', ')}`;
+      if (settingsPanel) settingsPanel.style.display = 'none';
+      if (quitBtn) quitBtn.textContent = 'RETURN TO LOBBY';
     } else {
       pauseTitle.textContent = 'WAITING FOR PLAYERS';
       pauseHint.textContent = `Paused: ${otherPaused.join(', ')}`;
+      if (settingsPanel) settingsPanel.style.display = 'block';
+      if (quitBtn) quitBtn.textContent = 'QUIT TO LOBBY';
     }
   } else {
     pauseMenu.style.display = 'none';
@@ -316,6 +360,127 @@ export function handlePauseState(pausedPlayers) {
 
 // Expose gameState globally for HUD to access myId
 window.gameState = state;
+
+// ── Custom Avatar Upload ────────────────────────────────
+export function setupCustomAvatarUpload() {
+  const uploadBtn = document.getElementById('avatar-upload-btn');
+  const fileInput = document.getElementById('avatar-upload');
+  const previewContainer = document.getElementById('custom-avatar-preview');
+  const previewCanvas = document.getElementById('preview-canvas');
+  const clearBtn = document.getElementById('clear-custom-avatar');
+  const cropModal = document.getElementById('crop-modal');
+  const cropCanvas = document.getElementById('crop-canvas');
+  const cropOverlay = document.getElementById('crop-overlay');
+  const cropCancel = document.getElementById('crop-cancel');
+  const cropConfirm = document.getElementById('crop-confirm');
+
+  let cropTool = null;
+  let currentImage = null;
+
+  uploadBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const img = await ImageProcessor.validateAndLoad(file);
+      currentImage = img;
+
+      // Setup crop tool
+      cropTool = new CropTool(cropCanvas, cropOverlay);
+      cropTool.setImage(img);
+
+      // Show modal
+      cropModal.classList.remove('hidden');
+    } catch (err) {
+      alert(err.message);
+    }
+
+    // Reset file input
+    fileInput.value = '';
+  });
+
+  cropCancel.addEventListener('click', () => {
+    cropModal.classList.add('hidden');
+    if (cropTool) {
+      cropTool.destroy();
+      cropTool = null;
+    }
+    currentImage = null;
+  });
+
+  cropConfirm.addEventListener('click', () => {
+    if (!cropTool || !currentImage) return;
+
+    // Resize if needed first, so we know the actual dimensions
+    const maxDimension = 200;
+    const resized = ImageProcessor.resizeImage(currentImage, maxDimension);
+
+    // Get crop params scaled to the resized image dimensions
+    const params = cropTool.getCropParams(resized.width);
+    if (!params) return;
+
+    // Create circular crop
+    const cropped = ImageProcessor.createCircularCrop(
+      resized,
+      params.x,
+      params.y,
+      params.radius,
+      60  // Output size
+    );
+
+    // Convert to base64
+    const dataUrl = ImageProcessor.toDataURL(cropped);
+
+    // Validate size
+    if (!ImageProcessor.validateBase64Size(dataUrl)) {
+      alert('Image is too large after processing. Please try a smaller image.');
+      cropModal.classList.add('hidden');
+      cropTool.destroy();
+      cropTool = null;
+      currentImage = null;
+      return;
+    }
+
+    // Store in state
+    state.customHeadData = dataUrl;
+
+    // Update preview
+    const previewCtx = previewCanvas.getContext('2d');
+    previewCtx.clearRect(0, 0, 60, 60);
+    const img = new Image();
+    img.onload = () => {
+      previewCtx.beginPath();
+      previewCtx.arc(30, 30, 30, 0, Math.PI * 2);
+      previewCtx.clip();
+      previewCtx.drawImage(img, 0, 0, 60, 60);
+    };
+    img.src = dataUrl;
+
+    // Show preview, hide upload button
+    previewContainer.classList.remove('hidden');
+    uploadBtn.classList.add('hidden');
+
+    // Close modal
+    cropModal.classList.add('hidden');
+    cropTool.destroy();
+    cropTool = null;
+    currentImage = null;
+  });
+
+  clearBtn.addEventListener('click', () => {
+    state.customHeadData = null;
+    previewContainer.classList.add('hidden');
+    uploadBtn.classList.remove('hidden');
+
+    // Clear preview canvas
+    const previewCtx = previewCanvas.getContext('2d');
+    previewCtx.clearRect(0, 0, 60, 60);
+  });
+}
 
 // ── Settings UI ───────────────────────────────────────
 export function setupSettingsUI() {
