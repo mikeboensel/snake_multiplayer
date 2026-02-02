@@ -9,8 +9,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
-from .constants import GRID_W, GRID_H, TICK_RATE, TOTAL_LEVELS, DIRECTIONS, NEON_COLORS, HEAD_AVATARS
+from .constants import GRID_W, GRID_H, TICK_RATE, TOTAL_LEVELS, DIRECTIONS, NEON_COLORS, HEAD_AVATARS, MAX_LIVES
 from .game import GameState
+from .levels import build_level_walls
 from .models import PlayerState
 from .connection_manager import ConnectionManager, walls_to_list, build_state_msg, build_lobby_msg
 
@@ -85,12 +86,35 @@ async def websocket_endpoint(ws: WebSocket):
                     coll = msg.get("collisions")
                     if isinstance(coll, bool):
                         game.game_options["collisions"] = coll
+                    lives = msg.get("lives")
+                    if isinstance(lives, int) and 1 <= lives <= 9:
+                        game.game_options["lives"] = lives
                     await manager.broadcast(build_lobby_msg(game))
             elif msg["type"] == "input":
                 if player_id in game.players and game.started:
                     d = msg.get("direction")
                     if d in DIRECTIONS:
                         game.players[player_id].next_direction = d
+            elif msg["type"] == "return_to_lobby":
+                if game.started:
+                    game.started = False
+                    game.level = 1
+                    game.walls = build_level_walls(1)
+                    game.food.clear()
+                    game.food_eaten = 0
+                    game.level_changing = False
+                    game.level_change_at = None
+                    game.eaten_events.clear()
+                    game.ready_players.clear()
+                    lives = game.game_options.get("lives", MAX_LIVES)
+                    for p in game.players.values():
+                        p.score = 0
+                        p.lives = lives
+                        p.alive = True
+                        p.game_over = False
+                        p.segments = []
+                        p.respawn_at = None
+                    await manager.broadcast(json.dumps({"type": "return_to_lobby"}))
     except WebSocketDisconnect:
         pass
     except Exception:
@@ -99,6 +123,17 @@ async def websocket_endpoint(ws: WebSocket):
         manager.connections.pop(ws, None)
         game.ready_players.discard(player_id)
         game.players.pop(player_id, None)
+        # Reset game state when last player disconnects
+        if not game.players:
+            game.started = False
+            game.level = 1
+            game.walls = build_level_walls(1)
+            game.food.clear()
+            game.food_eaten = 0
+            game.level_changing = False
+            game.level_change_at = None
+            game.eaten_events.clear()
+            game.ready_players.clear()
         if not game.started:
             await manager.broadcast(build_lobby_msg(game))
             # Check if remaining players are all ready

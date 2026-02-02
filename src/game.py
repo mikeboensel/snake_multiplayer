@@ -29,12 +29,15 @@ class GameState:
             "food_to_advance": FOOD_TO_ADVANCE,
             "food_count": FOOD_COUNT,
             "collisions": True,
+            "lives": MAX_LIVES,
         }
 
     def start_game(self):
         self.started = True
         self.ready_players.clear()
+        lives = self.game_options.get("lives", MAX_LIVES)
         for p in self.players.values():
+            p.lives = lives
             self.spawn_player(p)
         self.spawn_food()
 
@@ -131,8 +134,9 @@ class GameState:
         self.food_eaten = 0
         self.level_changing = False
         self.level_change_at = None
+        lives = self.game_options.get("lives", MAX_LIVES)
         for p in self.players.values():
-            p.lives = MAX_LIVES
+            p.lives = lives
             p.game_over = False
             self.spawn_player(p)
         self.spawn_food()

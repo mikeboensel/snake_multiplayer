@@ -327,7 +327,6 @@ canvas {
   font-size: 2.2em;
   text-shadow: 0 0 30px #f33;
   z-index: 4;
-  pointer-events: none;
   text-align: center;
 }
 #gameover-msg .sub {
@@ -335,6 +334,23 @@ canvas {
   color: #888;
   margin-top: 8px;
   text-shadow: none;
+}
+#return-lobby-btn {
+  margin-top: 20px;
+  background: transparent;
+  border: 2px solid #0ff;
+  color: #0ff;
+  padding: 10px 30px;
+  font-size: 0.7em;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+#return-lobby-btn:hover {
+  background: #0ff;
+  color: #0a0a0a;
+  box-shadow: 0 0 20px #0ff;
 }
 </style>
 </head>
@@ -368,6 +384,10 @@ canvas {
       <span class="opt-label">Snakes can collide</span>
       <span class="opt-control"><button class="toggle-btn on" id="opt-collisions">ON</button></span>
     </div>
+    <div class="opt-row">
+      <span class="opt-label">Lives per player</span>
+      <span class="opt-control"><input type="number" id="opt-lives" min="1" max="9" value="3"></span>
+    </div>
   </div>
   <div id="lobby-ready-count"></div>
   <button id="ready-btn">READY</button>
@@ -385,7 +405,7 @@ canvas {
     <div class="countdown-num" id="cl-num">3</div>
   </div>
   <div id="death-msg">YOU DIED — respawning...</div>
-  <div id="gameover-msg">GAME OVER<div class="sub">No lives remaining. Next level resets lives.</div></div>
+  <div id="gameover-msg">GAME OVER<div class="sub">No lives remaining. Next level resets lives.</div><button id="return-lobby-btn">RETURN TO LOBBY</button></div>
 </div>
 
 <script>
@@ -551,6 +571,16 @@ canvas {
       } else if (msg.type === 'level_change') {
         walls = msg.walls;
         renderWalls();
+      } else if (msg.type === 'return_to_lobby') {
+        gameContainer.style.display = 'none';
+        lobbyScreen.style.display = 'block';
+        currState = null;
+        prevState = null;
+        isReady = false;
+        readyBtn.classList.remove('is-ready');
+        readyBtn.textContent = 'READY';
+        document.getElementById('death-msg').style.display = 'none';
+        document.getElementById('gameover-msg').style.display = 'none';
       }
     };
 
@@ -583,10 +613,18 @@ canvas {
     }
   };
 
+  const returnLobbyBtn = document.getElementById('return-lobby-btn');
+  returnLobbyBtn.onclick = () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'return_to_lobby' }));
+    }
+  };
+
   // ── Game Options ─────────────────────────────────────
   const optFoodAdvance = document.getElementById('opt-food-advance');
   const optFoodCount = document.getElementById('opt-food-count');
   const optCollisions = document.getElementById('opt-collisions');
+  const optLives = document.getElementById('opt-lives');
 
   function sendGameOptions(partial) {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -609,6 +647,11 @@ canvas {
     sendGameOptions({ collisions: !current });
   });
 
+  optLives.addEventListener('change', () => {
+    const v = parseInt(optLives.value, 10);
+    if (v >= 1 && v <= 9) sendGameOptions({ lives: v });
+  });
+
   function syncOptions(opts) {
     if (!opts) return;
     optFoodAdvance.value = opts.food_to_advance;
@@ -619,6 +662,9 @@ canvas {
     } else {
       optCollisions.classList.remove('on');
       optCollisions.textContent = 'OFF';
+    }
+    if (opts.lives !== undefined) {
+      optLives.value = opts.lives;
     }
   }
 
