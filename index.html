@@ -219,6 +219,60 @@ canvas {
   wallCanvas.height = 600;
   const wallCtx = wallCanvas.getContext('2d');
 
+  // ── Audio ────────────────────────────────────────────
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playEatSound() {
+    const ac = ensureAudio();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.type = 'sine';
+    const t = ac.currentTime;
+    osc.frequency.setValueAtTime(520, t);
+    osc.frequency.exponentialRampToValueAtTime(1200, t + 0.08);
+    gain.gain.setValueAtTime(0.18, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    osc.start(t);
+    osc.stop(t + 0.15);
+  }
+
+  function playDeathSound() {
+    const ac = ensureAudio();
+    // Noise burst + low tone
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.type = 'sawtooth';
+    const t = ac.currentTime;
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(40, t + 0.3);
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.start(t);
+    osc.stop(t + 0.35);
+    // Short noise burst
+    const bufLen = ac.sampleRate * 0.12;
+    const buf = ac.createBuffer(1, bufLen, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+    const noise = ac.createBufferSource();
+    const nGain = ac.createGain();
+    noise.buffer = buf;
+    noise.connect(nGain);
+    nGain.connect(ac.destination);
+    nGain.gain.setValueAtTime(0.15, t);
+    nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    noise.start(t);
+  }
+
   // ── State ────────────────────────────────────────────
   let ws = null;
   let myId = null;
@@ -228,6 +282,7 @@ canvas {
   let lastStateTime = 0;
   let particles = [];
   let animFrame = 0;
+  let wasAlive = true;
 
   // ── Join ─────────────────────────────────────────────
   const joinScreen = document.getElementById('join-screen');
@@ -238,7 +293,7 @@ canvas {
   function connect() {
     const name = nameInput.value.trim() || 'Player';
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${proto}//${location.host}`);
+    ws = new WebSocket(`${proto}//${location.host}/ws`);
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'join', name }));
@@ -258,6 +313,10 @@ canvas {
         currState = msg;
         lastStateTime = performance.now();
         processEatenEvents(msg.eaten_events || []);
+        // Detect local player death
+        const me = myId && msg.players[myId];
+        if (me && !me.alive && wasAlive) playDeathSound();
+        wasAlive = me ? me.alive : true;
         updateHUD(msg);
       } else if (msg.type === 'level_change') {
         walls = msg.walls;
@@ -276,7 +335,7 @@ canvas {
     };
   }
 
-  joinBtn.onclick = connect;
+  joinBtn.onclick = () => { ensureAudio(); connect(); };
   nameInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') connect();
   });
@@ -316,7 +375,8 @@ canvas {
 
   // ── Particles ────────────────────────────────────────
   function processEatenEvents(events) {
-    for (const [gx, gy, color] of events) {
+    for (const ev of events) {
+      const [gx, gy, color, pid] = ev;
       const cx = gx * CELL + CELL / 2;
       const cy = gy * CELL + CELL / 2;
       for (let i = 0; i < 18; i++) {
@@ -332,6 +392,7 @@ canvas {
           size: 2 + Math.random() * 2,
         });
       }
+      if (pid === myId) playEatSound();
     }
   }
 
