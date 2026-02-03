@@ -1,4 +1,4 @@
-# Neon Snake - Multiplayer Game
+# Infinite Snakes - Multiplayer Game
 
 A real-time multiplayer Snake game built with Python (FastAPI) and vanilla JavaScript. Features multiple players, AI bots, custom avatars, progressive levels, and configurable game options.
 

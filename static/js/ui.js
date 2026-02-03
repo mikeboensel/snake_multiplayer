@@ -421,6 +421,24 @@ export function setupCustomAvatarUpload() {
   let cropTool = null;
   let currentImage = null;
 
+  // Restore saved custom avatar from localStorage
+  const savedAvatar = localStorage.getItem('customHeadData');
+  if (savedAvatar) {
+    state.customHeadData = savedAvatar;
+    const img = new Image();
+    img.onload = () => {
+      const previewCtx = previewCanvas.getContext('2d');
+      previewCtx.clearRect(0, 0, 60, 60);
+      previewCtx.beginPath();
+      previewCtx.arc(30, 30, 30, 0, Math.PI * 2);
+      previewCtx.clip();
+      previewCtx.drawImage(img, 0, 0, 60, 60);
+    };
+    img.src = savedAvatar;
+    previewContainer.classList.remove('hidden');
+    uploadBtn.classList.add('hidden');
+  }
+
   uploadBtn.addEventListener('click', () => {
     fileInput.click();
   });
@@ -489,8 +507,9 @@ export function setupCustomAvatarUpload() {
       return;
     }
 
-    // Store in state
+    // Store in state and persist to localStorage
     state.customHeadData = dataUrl;
+    localStorage.setItem('customHeadData', dataUrl);
 
     // Update preview
     const previewCtx = previewCanvas.getContext('2d');
@@ -517,6 +536,7 @@ export function setupCustomAvatarUpload() {
 
   clearBtn.addEventListener('click', () => {
     state.customHeadData = null;
+    localStorage.removeItem('customHeadData');
     previewContainer.classList.add('hidden');
     uploadBtn.classList.remove('hidden');
 

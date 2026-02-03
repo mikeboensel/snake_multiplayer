@@ -9,6 +9,50 @@ body {
   color: #ddd;
   overflow: hidden;
 }
+/* Splash screen */
+#splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  animation: splashFadeIn 0.3s ease-out;
+}
+#splash-screen.fade-out {
+  animation: splashFadeOut 0.5s ease-in forwards;
+}
+#splash-img {
+  max-width: 70vw;
+  max-height: 55vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.4), 0 0 80px rgba(0, 255, 255, 0.15);
+}
+#splash-text {
+  margin-top: 24px;
+  font-size: 2.5em;
+  font-family: 'Courier New', monospace;
+  color: #0ff;
+  text-shadow: 0 0 20px #0ff, 0 0 40px #0ff, 0 0 80px #0ff;
+  letter-spacing: 0.15em;
+  animation: splashPulse 1s ease-in-out infinite alternate;
+}
+@keyframes splashFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes splashFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes splashPulse {
+  from { text-shadow: 0 0 20px #0ff, 0 0 40px #0ff; }
+  to { text-shadow: 0 0 30px #0ff, 0 0 60px #0ff, 0 0 100px #0ff; }
+}
+
 #join-screen {
   text-align: center;
   z-index: 10;

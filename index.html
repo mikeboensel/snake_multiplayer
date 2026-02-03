@@ -3,13 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Snake</title>
+<title>Infinite Snakes</title>
 <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
 
-<div id="join-screen">
-  <h1>NEON SNAKE</h1>
+<div id="splash-screen">
+  <img src="/static/InfiniteSnakes.jpeg" alt="Infinite Snakes" id="splash-img">
+  <div id="splash-text">SundAI Game Studio</div>
+  <div id="splash-text">(Famed creator of Gas Station Simulator)</div>
+</div>
+
+<div id="join-screen" style="display:none;">
+  <h1>INFINITE SNAKES</h1>
   <input type="text" id="name-input" placeholder="Enter your name" maxlength="16" autofocus>
   <div class="picker-label">PICK YOUR COLOR</div>
   <div id="color-picker"></div>
