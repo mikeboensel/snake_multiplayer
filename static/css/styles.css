@@ -615,7 +615,8 @@ canvas {
   white-space: nowrap;
 }
 #legend .entry.me { background: rgba(255,255,255,0.04); margin: 0 -4px; padding: 4px 4px; border-radius: 2px; }
-#legend .entry.dead { opacity: 0.4; }
+#legend .entry.dead { opacity: 0.4; filter: grayscale(100%); }
+#legend .entry.dead .pname { text-decoration: line-through; }
 #legend .color-swatch {
   width: 10px;
   height: 10px;

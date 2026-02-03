@@ -198,7 +198,7 @@ export function updateHUD(state) {
   const emojiSize = (0.9 * avatarScale).toFixed(1);
 
   entries.innerHTML = sorted.map(p => {
-    const hearts = '\u2764'.repeat(Math.max(0, p.lives));
+    const hearts = p.game_over ? '\u{1F480}' : '\u2764'.repeat(Math.max(0, p.lives));
     const isMe = p.id === window.gameState?.myId;
     const cls = (isMe ? ' me' : '') + (p.game_over ? ' dead' : '');
 

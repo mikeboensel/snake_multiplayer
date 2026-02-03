@@ -163,11 +163,9 @@ class GameState:
         self.food_eaten = 0
         self.level_changing = False
         self.level_change_at = None
-        lives = self.game_options.get("lives", MAX_LIVES)
         for p in self.players.values():
             # Only respawn players who haven't lost all lives
             if not p.game_over:
-                p.lives = lives
                 self.spawn_player(p)
             else:
                 # Ensure dead players stay dead

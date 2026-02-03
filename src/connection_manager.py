@@ -45,8 +45,8 @@ def build_state_msg(game: GameState) -> str:
         # Count spectators
         if p.location == PlayerLocation.SPECTATING:
             spectator_count += 1
-        # Only include PLAYING players in state message (spectators watch but don't play)
-        if p.location == PlayerLocation.PLAYING:
+        # Include PLAYING players and eliminated players (game_over) so they stay in the legend
+        if p.location == PlayerLocation.PLAYING or p.game_over:
             players_data[pid] = {
                 "name": p.name,
                 "color": p.color,
