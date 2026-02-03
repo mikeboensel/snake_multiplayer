@@ -101,14 +101,23 @@ export function updateLobby(players, gameOptions) {
   syncOptions(gameOptions);
 }
 
-// ── Game Options ─────────────────────────────────────
-function tickRateLabel(v) {
-  if (v <= 6) return 'Slow';
-  if (v <= 8) return 'Relaxed';
-  if (v <= 12) return 'Normal';
-  if (v <= 15) return 'Fast';
-  return 'Ludicrous';
+// ── Utility ──────────────────────────────────────────
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
 }
+
+// ── Game Options ─────────────────────────────────────
+const TICK_RATE_OPTIONS = [
+  { label: 'Slow', rate: 5 },
+  { label: 'Relaxed', rate: 8 },
+  { label: 'Normal', rate: 10 },
+  { label: 'Fast', rate: 15 },
+  { label: 'Ludicrous', rate: 20 }
+];
 
 export function setupGameOptions() {
   const optFoodAdvance = document.getElementById('opt-food-advance');
@@ -148,10 +157,12 @@ export function setupGameOptions() {
     sendGameOptions({ bot_difficulty: v });
   });
 
+  const debouncedTickRate = debounce((rate) => sendGameOptions({ tick_rate: rate }), 150);
   optTickRate.addEventListener('input', () => {
-    const v = parseInt(optTickRate.value, 10);
-    document.getElementById('val-tick-rate').textContent = tickRateLabel(v);
-    sendGameOptions({ tick_rate: v });
+    const idx = parseInt(optTickRate.value, 10);
+    const opt = TICK_RATE_OPTIONS[idx];
+    document.getElementById('val-tick-rate').textContent = opt.label;
+    debouncedTickRate(opt.rate);
   });
 }
 
@@ -185,8 +196,15 @@ export function syncOptions(opts) {
   }
   if (opts.tick_rate !== undefined) {
     const optTickRate = document.getElementById('opt-tick-rate');
-    optTickRate.value = opts.tick_rate;
-    document.getElementById('val-tick-rate').textContent = tickRateLabel(opts.tick_rate);
+    // Find closest matching index
+    let bestIdx = 2; // default to Normal
+    let bestDiff = Infinity;
+    TICK_RATE_OPTIONS.forEach((opt, i) => {
+      const diff = Math.abs(opt.rate - opts.tick_rate);
+      if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+    });
+    optTickRate.value = bestIdx;
+    document.getElementById('val-tick-rate').textContent = TICK_RATE_OPTIONS[bestIdx].label;
   }
 }
 

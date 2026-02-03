@@ -92,6 +92,118 @@ function applyWarpToCoordinate(x, y) {
   return { x: wx, y: wy };
 }
 
+// ── Particle Pattern Generators ──────────────────────
+function varyColor(hexColor, variation) {
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+
+  // Convert to HSL for hue shift
+  const max = Math.max(r, g, b) / 255;
+  const min = Math.min(r, g, b) / 255;
+  const l = (max + min) / 2;
+  let h = 0, s = 0;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r / 255) h = ((g - b) / 255 / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g / 255) h = ((b - r) / 255 / d + 2) / 6;
+    else h = ((r - g) / 255 / d + 4) / 6;
+  }
+
+  // Apply random hue shift
+  h = (h + (Math.random() * 2 - 1) * variation + 1) % 1;
+
+  // Convert back to RGB
+  const hue2rgb = (p, q, t) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1/6) return p + (q - p) * 6 * t;
+    if (t < 1/2) return q;
+    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
+  };
+
+  let rOut, gOut, bOut;
+  if (s === 0) {
+    rOut = gOut = bOut = l;
+  } else {
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    rOut = hue2rgb(p, q, h + 1/3);
+    gOut = hue2rgb(p, q, h);
+    bOut = hue2rgb(p, q, h - 1/3);
+  }
+
+  return `rgb(${Math.round(rOut * 255)},${Math.round(gOut * 255)},${Math.round(bOut * 255)})`;
+}
+
+function createParticlePattern(pattern, cx, cy, count, baseColor, opts = {}) {
+  const particles = [];
+  const ps = settings.particles;
+  const angleJitter = ps.angleJitter || 0.5;
+  const colorVar = ps.colorVariation || 0.15;
+  const gravity = opts.gravity || 0;
+  const velocityMult = opts.velocityMult || 1;
+  const lifeMult = opts.lifeMult || 1;
+
+  for (let i = 0; i < count; i++) {
+    let angle, speed, vx, vy;
+    const baseAngle = (Math.PI * 2 * i) / count;
+    const jitter = (Math.random() * 2 - 1) * angleJitter;
+    const particleColor = Math.random() < 0.5 ? baseColor : varyColor(baseColor, colorVar);
+
+    switch (pattern) {
+      case 'spiral':
+        angle = baseAngle + jitter + (i / count) * Math.PI;
+        speed = (ps.velocityMin + Math.random() * (ps.velocityMax - ps.velocityMin)) * velocityMult;
+        vx = Math.cos(angle) * speed;
+        vy = Math.sin(angle) * speed;
+        break;
+
+      case 'ring':
+        angle = baseAngle + jitter * 0.3; // Less jitter for ring uniformity
+        speed = (ps.velocityMin * 0.8 + ps.velocityMax * 0.2 + Math.random() * 20) * velocityMult;
+        vx = Math.cos(angle) * speed;
+        vy = Math.sin(angle) * speed;
+        break;
+
+      case 'sparkle':
+        angle = Math.random() * Math.PI * 2;
+        speed = (Math.random() * (ps.velocityMax - ps.velocityMin) + ps.velocityMin) * velocityMult * (0.5 + Math.random());
+        vx = Math.cos(angle) * speed;
+        vy = Math.sin(angle) * speed;
+        break;
+
+      case 'burst':
+      default:
+        angle = baseAngle + jitter;
+        speed = (ps.velocityMin + Math.random() * (ps.velocityMax - ps.velocityMin)) * velocityMult;
+        vx = Math.cos(angle) * speed;
+        vy = Math.sin(angle) * speed;
+        break;
+    }
+
+    particles.push({
+      x: cx, y: cy,
+      vx, vy,
+      gravity: gravity > 0 ? gravity * (0.5 + Math.random()) : 0,
+      life: ps.life * lifeMult * (0.8 + Math.random() * 0.4),
+      maxLife: ps.life * lifeMult,
+      color: particleColor,
+      size: ps.sizeMin + Math.random() * (ps.sizeMax - ps.sizeMin + (opts.sizeBoost || 0)),
+    });
+  }
+
+  return particles;
+}
+
+function randomPattern() {
+  const patterns = settings.particles.patterns || ['burst'];
+  return patterns[Math.floor(Math.random() * patterns.length)];
+}
+
 // ── Particles ────────────────────────────────────────
 export function processEatenEvents(events) {
   for (const ev of events) {
@@ -114,20 +226,14 @@ export function processEatenEvents(events) {
       continue;
     }
 
-    const count = settings.particles.count;
-    for (let i = 0; i < count; i++) {
-      const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
-      const speed = settings.particles.velocityMin + Math.random() * (settings.particles.velocityMax - settings.particles.velocityMin);
-      state.particles.push({
-        x: cx, y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: settings.particles.life * (0.9 + Math.random() * 0.2),
-        maxLife: settings.particles.life,
-        color,
-        size: settings.particles.sizeMin + Math.random() * (settings.particles.sizeMax - settings.particles.sizeMin),
-      });
-    }
+    const pattern = randomPattern();
+    const newParticles = createParticlePattern(
+      pattern, cx, cy,
+      settings.particles.count,
+      color
+    );
+    state.particles.push(...newParticles);
+
     if (pid === state.myId) playEatSound();
   }
 }
@@ -143,20 +249,21 @@ export function processDeathEvent(pid, x, y, color) {
   const cx = x * CELL + CELL / 2;
   const cy = y * CELL + CELL / 2;
 
-  const count = settings.particles.count * 2; // Double particles for death
-  for (let i = 0; i < count; i++) {
-    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-    const speed = settings.particles.velocityMin * 1.5 + Math.random() * (settings.particles.velocityMax * 1.5 - settings.particles.velocityMin * 1.5);
-    state.particles.push({
-      x: cx, y: cy,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: settings.particles.life * 1.5, // Longer lasting particles
-      maxLife: settings.particles.life * 1.5,
-      color,
-      size: settings.particles.sizeMin + Math.random() * (settings.particles.sizeMax - settings.particles.sizeMin + 2),
-    });
-  }
+  const pattern = randomPattern();
+  const gravity = 50 + Math.random() * 100; // Random gravity 50-150 px/s²
+
+  const newParticles = createParticlePattern(
+    pattern, cx, cy,
+    settings.particles.count * 2, // Double particles for death
+    color,
+    {
+      gravity,
+      velocityMult: 1.5,
+      lifeMult: 1.5,
+      sizeBoost: 2,
+    }
+  );
+  state.particles.push(...newParticles);
 }
 
 export function updateParticles(dt) {

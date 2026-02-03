@@ -9,6 +9,14 @@ export function ensureAudio() {
   return audioCtx;
 }
 
+function randomVariation(base, variationRange) {
+  return base * (1 + (Math.random() * 2 - 1) * variationRange);
+}
+
+function randomFromArray(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 export function playEatSound() {
   if (!settings.sfx.enabled || !settings.sfx.eat.enabled) return;
 
@@ -17,18 +25,36 @@ export function playEatSound() {
   const gain = ac.createGain();
   osc.connect(gain);
   gain.connect(ac.destination);
-  osc.type = 'sine';
 
   const s = settings.sfx;
-  const vol = s.masterVolume * s.eat.volume;
+  const eat = s.eat;
+
+  // Random waveform selection
+  const waveforms = eat.waveforms || ['sine'];
+  osc.type = randomFromArray(waveforms);
+
+  // Random detune for richer sound
+  const detuneRange = eat.detuneRange || 0;
+  osc.detune.value = (Math.random() * 2 - 1) * detuneRange;
+
+  const vol = s.masterVolume * eat.volume;
   const t = ac.currentTime;
 
-  osc.frequency.setValueAtTime(s.eat.pitchStart, t);
-  osc.frequency.exponentialRampToValueAtTime(s.eat.pitchEnd, t + s.eat.duration);
+  // Random pitch variation
+  const pitchVar = eat.pitchVariation || 0;
+  const pitchStart = randomVariation(eat.pitchStart, pitchVar);
+  const pitchEnd = randomVariation(eat.pitchEnd, pitchVar);
+
+  // Random duration variation
+  const durVar = eat.durationVariation || 0;
+  const duration = randomVariation(eat.duration, durVar);
+
+  osc.frequency.setValueAtTime(pitchStart, t);
+  osc.frequency.exponentialRampToValueAtTime(pitchEnd, t + duration);
   gain.gain.setValueAtTime(vol, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + s.eat.duration);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
   osc.start(t);
-  osc.stop(t + s.eat.duration);
+  osc.stop(t + duration);
 }
 
 export function playDeathSound() {
@@ -39,18 +65,36 @@ export function playDeathSound() {
   const gain = ac.createGain();
   osc.connect(gain);
   gain.connect(ac.destination);
-  osc.type = 'sawtooth';
 
   const s = settings.sfx;
-  const vol = s.masterVolume * s.death.volume;
+  const death = s.death;
+
+  // Random waveform selection
+  const waveforms = death.waveforms || ['sawtooth'];
+  osc.type = randomFromArray(waveforms);
+
+  // Random detune for variation
+  const detuneRange = death.detuneRange || 0;
+  osc.detune.value = (Math.random() * 2 - 1) * detuneRange;
+
+  const vol = s.masterVolume * death.volume;
   const t = ac.currentTime;
 
-  osc.frequency.setValueAtTime(s.death.pitchStart, t);
-  osc.frequency.exponentialRampToValueAtTime(s.death.pitchEnd, t + s.death.duration);
+  // Random pitch variation
+  const pitchVar = death.pitchVariation || 0;
+  const pitchStart = randomVariation(death.pitchStart, pitchVar);
+  const pitchEnd = randomVariation(death.pitchEnd, pitchVar);
+
+  // Random duration variation
+  const durVar = death.durationVariation || 0;
+  const duration = randomVariation(death.duration, durVar);
+
+  osc.frequency.setValueAtTime(pitchStart, t);
+  osc.frequency.exponentialRampToValueAtTime(pitchEnd, t + duration);
   gain.gain.setValueAtTime(vol, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + s.death.duration);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
   osc.start(t);
-  osc.stop(t + s.death.duration);
+  osc.stop(t + duration);
 
   const bufLen = ac.sampleRate * 0.12;
   const buf = ac.createBuffer(1, bufLen, ac.sampleRate);

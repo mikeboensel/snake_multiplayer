@@ -11,6 +11,9 @@ export const defaultSettings = {
     life: 0.4,
     sizeMin: 2,
     sizeMax: 4,
+    patterns: ['burst', 'spiral', 'ring', 'sparkle'],
+    colorVariation: 0.15,
+    angleJitter: 0.5,
   },
   screenShake: {
     enabled: true,
@@ -49,6 +52,10 @@ export const defaultSettings = {
       pitchStart: 520,
       pitchEnd: 1200,
       duration: 0.15,
+      pitchVariation: 0.12,
+      durationVariation: 0.1,
+      waveforms: ['sine', 'triangle'],
+      detuneRange: 10,
     },
     death: {
       enabled: true,
@@ -56,6 +63,10 @@ export const defaultSettings = {
       pitchStart: 180,
       pitchEnd: 40,
       duration: 0.35,
+      pitchVariation: 0.15,
+      durationVariation: 0.1,
+      waveforms: ['sawtooth', 'square'],
+      detuneRange: 15,
     },
   },
 };
