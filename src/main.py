@@ -10,7 +10,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .constants import GRID_W, GRID_H, TICK_RATE, TOTAL_LEVELS, DIRECTIONS, NEON_COLORS, HEAD_AVATARS, MAX_LIVES
+from .constants import GRID_W, GRID_H, TICK_RATE, TOTAL_LEVELS, DIRECTIONS, NEON_COLORS, HEAD_AVATARS, MAX_LIVES, MIN_TICK_RATE, MAX_TICK_RATE
 from .models import PlayerLocation
 import re
 
@@ -143,6 +143,9 @@ async def websocket_endpoint(ws: WebSocket):
                     bot_diff = msg.get("bot_difficulty")
                     if isinstance(bot_diff, int) and 0 <= bot_diff <= 2:
                         game.game_options["bot_difficulty"] = bot_diff
+                    tick_rate = msg.get("tick_rate")
+                    if isinstance(tick_rate, int) and MIN_TICK_RATE <= tick_rate <= MAX_TICK_RATE:
+                        game.game_options["tick_rate"] = tick_rate
                     await manager.broadcast(build_lobby_msg(game))
             elif msg["type"] == "add_ai":
                 if player_id in game.players and not game.started:
@@ -319,8 +322,9 @@ def validate_custom_head(data_url: str) -> bool:
 async def game_loop():
     prev_level = game.level
     while True:
+        current_tick_rate = game.game_options.get("tick_rate", TICK_RATE)
         if not game.started or any_paused_human_players(game):
-            await asyncio.sleep(1 / TICK_RATE)
+            await asyncio.sleep(1 / current_tick_rate)
             continue
 
         game.tick()
@@ -370,7 +374,7 @@ async def game_loop():
             await manager.broadcast(build_lobby_msg(game))
             prev_level = game.level
 
-        await asyncio.sleep(1 / TICK_RATE)
+        await asyncio.sleep(1 / current_tick_rate)
 
 
 if __name__ == "__main__":

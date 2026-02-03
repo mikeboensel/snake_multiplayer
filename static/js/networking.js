@@ -59,10 +59,16 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       break;
 
     case 'game_start':
+      stopFireworks();
       state.walls = msg.walls;
       state.myLocation = 'playing';
       state.myGameOver = false;
       state.isSpectating = false;
+      state.finalScores = null;
+      document.getElementById('death-msg').style.display = 'none';
+      document.getElementById('gameover-overlay').style.display = 'none';
+      document.getElementById('game-end-overlay').style.display = 'none';
+      document.getElementById('pause-menu').style.display = 'none';
       lobbyScreen.style.display = 'none';
       gameContainer.style.display = 'flex';
       resizeCanvas();

@@ -8,6 +8,7 @@ from .constants import (
     GRID_W, GRID_H, FOOD_COUNT, FOOD_TO_ADVANCE,
     RESPAWN_DELAY, LEVEL_COUNTDOWN, TOTAL_LEVELS, MAX_LIVES,
     DIRECTIONS, OPPOSITES, NEON_COLORS, HEAD_AVATARS,
+    TICK_RATE,
 )
 from .levels import build_level_walls
 from .models import PlayerState, PlayerLocation
@@ -43,6 +44,7 @@ class GameState:
             "collisions": True,
             "lives": MAX_LIVES,
             "bot_difficulty": 1,  # 0=Easy, 1=Medium, 2=Hard
+            "tick_rate": TICK_RATE,
         }
 
     def start_game(self):

@@ -102,12 +102,21 @@ export function updateLobby(players, gameOptions) {
 }
 
 // ── Game Options ─────────────────────────────────────
+function tickRateLabel(v) {
+  if (v <= 6) return 'Slow';
+  if (v <= 8) return 'Relaxed';
+  if (v <= 12) return 'Normal';
+  if (v <= 15) return 'Fast';
+  return 'Ludicrous';
+}
+
 export function setupGameOptions() {
   const optFoodAdvance = document.getElementById('opt-food-advance');
   const optFoodCount = document.getElementById('opt-food-count');
   const optCollisions = document.getElementById('opt-collisions');
   const optLives = document.getElementById('opt-lives');
   const optBotDifficulty = document.getElementById('opt-bot-difficulty');
+  const optTickRate = document.getElementById('opt-tick-rate');
 
   optFoodAdvance.addEventListener('input', () => {
     const v = parseInt(optFoodAdvance.value, 10);
@@ -138,6 +147,12 @@ export function setupGameOptions() {
     document.getElementById('val-bot-difficulty').textContent = labels[v];
     sendGameOptions({ bot_difficulty: v });
   });
+
+  optTickRate.addEventListener('input', () => {
+    const v = parseInt(optTickRate.value, 10);
+    document.getElementById('val-tick-rate').textContent = tickRateLabel(v);
+    sendGameOptions({ tick_rate: v });
+  });
 }
 
 export function syncOptions(opts) {
@@ -167,6 +182,11 @@ export function syncOptions(opts) {
     optBotDifficulty.value = opts.bot_difficulty;
     const labels = ['Easy', 'Medium', 'Hard'];
     document.getElementById('val-bot-difficulty').textContent = labels[opts.bot_difficulty];
+  }
+  if (opts.tick_rate !== undefined) {
+    const optTickRate = document.getElementById('opt-tick-rate');
+    optTickRate.value = opts.tick_rate;
+    document.getElementById('val-tick-rate').textContent = tickRateLabel(opts.tick_rate);
   }
 }
 
