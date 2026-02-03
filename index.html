@@ -96,17 +96,17 @@
 </div>
 
 <div id="game-container">
-  <div id="hud">
-    <span class="level-info" id="level-info">LEVEL 1</span>
-    <span class="food-counter" id="food-counter">FOOD: 0/5</span>
-  </div>
-  <div id="spectator-banner">
-    <span class="spectator-icon">👁</span>
-    <span class="spectator-text">YOU ARE SPECTATING</span>
-    <span class="spectator-hint">Game in progress — watching mode</span>
-  </div>
-  <canvas id="game" width="800" height="600"></canvas>
-  <div id="legend"><h3>PLAYERS</h3><div id="legend-entries"></div></div>
+  <div id="game-area">
+    <div id="hud">
+      <span class="level-info" id="level-info">LEVEL 1</span>
+      <span class="food-counter" id="food-counter">FOOD: 0/5</span>
+    </div>
+    <div id="spectator-banner">
+      <span class="spectator-icon">👁</span>
+      <span class="spectator-text">YOU ARE SPECTATING</span>
+      <span class="spectator-hint">Game in progress — watching mode</span>
+    </div>
+    <canvas id="game"></canvas>
   <div id="countdown-overlay">
     <div class="level-text" id="cl-level">LEVEL 2</div>
     <div class="countdown-num" id="cl-num">3</div>
@@ -351,6 +351,8 @@
 
     <button id="pause-quit-btn">QUIT TO LOBBY</button>
   </div>
+  </div><!-- /game-area -->
+  <div id="legend"><h3>PLAYERS</h3><div id="legend-entries"></div></div>
 </div>
 
 <!-- Crop Modal -->

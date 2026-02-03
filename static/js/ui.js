@@ -287,7 +287,7 @@ export function setupEventListeners(nameInput, joinScreen, lobbyScreen, gameCont
 
   function togglePause() {
     // Only allow pause when in game and not in lobby
-    if (gameContainer.style.display !== 'block') return;
+    if (gameContainer.style.display === 'none' || gameContainer.style.display === '') return;
     if (state.isSpectating) return; // Spectators cannot pause
     sendPause();
   }

@@ -1,6 +1,6 @@
 // Canvas rendering, particles, and drawing
 import { state, canvas, ctx, wallCanvas, wallCtx } from './state.js';
-import { CELL, HEAD_AVATARS } from './constants.js';
+import { CELL, HEAD_AVATARS, canvasW, canvasH } from './constants.js';
 import { playEatSound, playDeathSound } from './audio.js';
 import { updateHUD } from './ui.js';
 import { settings } from './effects-settings.js';
@@ -22,7 +22,7 @@ export function clearCustomHeadCache() {
 
 // ── Wall Rendering (offscreen) ───────────────────────
 export function renderWalls() {
-  wallCtx.clearRect(0, 0, 800, 600);
+  wallCtx.clearRect(0, 0, canvasW(), canvasH());
   wallCtx.shadowColor = '#4444aa';
   wallCtx.shadowBlur = 8;
   wallCtx.fillStyle = '#2a2a4a';
@@ -221,18 +221,18 @@ function drawLoop(now) {
   ctx.save();
   ctx.translate(shake.x, shake.y);
 
-  ctx.clearRect(0, 0, 800, 600);
+  ctx.clearRect(0, 0, canvasW(), canvasH());
 
   ctx.fillStyle = '#0a0a0a';
-  ctx.fillRect(0, 0, 800, 600);
+  ctx.fillRect(0, 0, canvasW(), canvasH());
 
   ctx.strokeStyle = '#151515';
   ctx.lineWidth = 0.5;
-  for (let x = 0; x <= 800; x += CELL) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 600); ctx.stroke();
+  for (let x = 0; x <= canvasW(); x += CELL) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvasH()); ctx.stroke();
   }
-  for (let y = 0; y <= 600; y += CELL) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(800, y); ctx.stroke();
+  for (let y = 0; y <= canvasH(); y += CELL) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvasW(), y); ctx.stroke();
   }
 
   ctx.drawImage(wallCanvas, 0, 0);
@@ -372,8 +372,8 @@ let fireworkInterval = null;
 export function startFireworks() {
   if (fireworkInterval) return;
   fireworkInterval = setInterval(() => {
-    const cx = Math.random() * 800;
-    const cy = Math.random() * 400 + 50;
+    const cx = Math.random() * canvasW();
+    const cy = Math.random() * (canvasH() * 0.67) + 50;
     const color = FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)];
     const count = 40 + Math.floor(Math.random() * 20);
     for (let i = 0; i < count; i++) {

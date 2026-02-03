@@ -1,7 +1,11 @@
 // Game constants
-export const CELL = 20;
+export let CELL = 20;
 export const GRID_W = 40;
 export const GRID_H = 30;
+
+export function setCell(value) { CELL = value; }
+export function canvasW() { return CELL * GRID_W; }
+export function canvasH() { return CELL * GRID_H; }
 
 export const NEON_COLORS = [
   "#ff00ff", "#00ffff", "#ff3366", "#33ff66",

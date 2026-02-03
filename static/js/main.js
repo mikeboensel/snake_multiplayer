@@ -1,6 +1,7 @@
 // Main entry point
 import { buildPickers, setupGameOptions, setupEventListeners, setupSettingsUI } from './ui.js';
-import { state } from './state.js';
+import { state, resizeCanvas } from './state.js';
+import { renderWalls } from './rendering.js';
 import { NEON_COLORS } from './constants.js';
 
 // ── Retro Jingle ────────────────────────────────────
@@ -102,3 +103,15 @@ setupEventListeners(nameInput, joinScreen, lobbyScreen, gameContainer, readyBtn)
 
 // Initialize settings UI
 setupSettingsUI();
+
+// Debounced resize handler
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (gameContainer.style.display === 'flex') {
+      resizeCanvas();
+      renderWalls();
+    }
+  }, 100);
+});

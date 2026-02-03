@@ -1,5 +1,5 @@
 // WebSocket networking and message handling
-import { state } from './state.js';
+import { state, resizeCanvas } from './state.js';
 import { updateLobby, syncOptions, handlePauseState, showGameEndOverlay } from './ui.js';
 import { renderWalls, startGame, processEatenEvents, playDeathSound, processDeathEvent, startFireworks, stopFireworks } from './rendering.js';
 
@@ -63,9 +63,10 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       state.myLocation = 'playing';
       state.myGameOver = false;
       state.isSpectating = false;
-      renderWalls();
       lobbyScreen.style.display = 'none';
-      gameContainer.style.display = 'block';
+      gameContainer.style.display = 'flex';
+      resizeCanvas();
+      renderWalls();
       startGame();
       break;
 
@@ -74,9 +75,10 @@ function handleMessage(msg, joinScreen, lobbyScreen, gameContainer, readyBtn) {
       state.isSpectating = true;
       state.myLocation = 'spectating';
       state.walls = msg.walls;
-      renderWalls();
       lobbyScreen.style.display = 'none';
-      gameContainer.style.display = 'block';
+      gameContainer.style.display = 'flex';
+      resizeCanvas();
+      renderWalls();
       startGame();
       break;
 
