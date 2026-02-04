@@ -91,7 +91,7 @@ body {
 #join-screen {
   text-align: center;
   z-index: 10;
-  max-width: 400px;
+  max-width: 300px;
 }
 
 #join-screen h1 {
@@ -187,6 +187,9 @@ body {
   justify-content: center;
   gap: 6px;
   margin-bottom: 5px;
+  max-width: 276px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 #avatar-picker .avatar-opt {
@@ -531,6 +534,7 @@ body {
   border-radius: 3px;
   outline: none;
   cursor: pointer;
+  touch-action: none;
 }
 
 #lobby-options .slider-container input[type="range"]::-webkit-slider-thumb {
@@ -605,6 +609,7 @@ body {
   border-radius: 3px;
   outline: none;
   cursor: pointer;
+  touch-action: none;
 }
 
 .triple-slider-container input[type="range"]::-webkit-slider-thumb {
