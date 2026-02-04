@@ -3,6 +3,61 @@ import { settings } from './effects-settings.js';
 
 let audioCtx = null;
 
+// Music player state
+let musicElement = null;
+let userHasInteracted = false;
+
+function createMusicElement() {
+  if (musicElement) return;
+  musicElement = new Audio();
+  musicElement.preload = 'none';
+  musicElement.loop = true;
+  musicElement.src = '/static/audio/ClementPanchout_TheSickoGecko.mp3';
+}
+
+export function startMusicOnInteraction() {
+  const tryPlay = () => {
+    userHasInteracted = true;
+    if (!settings.sfx.music.enabled) return;
+    playMusic();
+  };
+
+  // Try immediately (works if user has prior interaction with domain)
+  tryPlay();
+
+  // Listen for ANY user interaction
+  const events = ['click', 'keydown', 'touchstart', 'mousedown'];
+  const handler = () => {
+    tryPlay();
+    events.forEach(e => document.removeEventListener(e, handler));
+  };
+  events.forEach(e => document.addEventListener(e, handler, { once: false }));
+}
+
+export function playMusic() {
+  if (!userHasInteracted) return;
+  createMusicElement();
+  musicElement.volume = settings.sfx.music.volume * settings.sfx.masterVolume;
+  musicElement.play().catch(() => {});
+}
+
+export function pauseMusic() {
+  if (musicElement) musicElement.pause();
+}
+
+export function setMusicVolume(volume) {
+  settings.sfx.music.volume = volume;
+  if (musicElement) {
+    musicElement.volume = volume * settings.sfx.masterVolume;
+  }
+}
+
+export function updateMusicMasterVolume() {
+  if (musicElement) {
+    musicElement.volume = settings.sfx.music.volume * settings.sfx.masterVolume;
+  }
+}
+
 export function ensureAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();

@@ -3,6 +3,7 @@ import { buildPickers, setupGameOptions, setupEventListeners, setupSettingsUI } 
 import { state, resizeCanvas } from './state.js';
 import { renderWalls } from './rendering.js';
 import { NEON_COLORS } from './constants.js';
+import { startMusicOnInteraction } from './audio.js';
 
 // ── Retro Jingle ────────────────────────────────────
 function playSplashJingle() {
@@ -103,6 +104,9 @@ setupEventListeners(nameInput, joinScreen, lobbyScreen, gameContainer, readyBtn)
 
 // Initialize settings UI
 setupSettingsUI();
+
+// Start music on user interaction
+startMusicOnInteraction();
 
 // Debounced resize handler
 let resizeTimer;

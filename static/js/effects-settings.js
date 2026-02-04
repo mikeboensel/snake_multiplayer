@@ -46,6 +46,11 @@ export const defaultSettings = {
     enabled: true,
     masterVolume: 0.5,
 
+    music: {
+      enabled: true,
+      volume: 0.3,
+    },
+
     eat: {
       enabled: true,
       volume: 0.18,

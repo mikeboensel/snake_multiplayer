@@ -4,6 +4,7 @@ import { NEON_COLORS, HEAD_AVATARS } from './constants.js';
 import { sendGameOptions, sendReady, sendAddAI, sendRemoveAI, sendReturnToLobby, sendPause, sendInput } from './networking.js';
 import { stopFireworks } from './rendering.js';
 import { settings, saveSettings, resetSettings } from './effects-settings.js';
+import { playMusic, pauseMusic, setMusicVolume, updateMusicMasterVolume } from './audio.js';
 import { ImageProcessor, CropTool } from './image-processor.js';
 
 // ── Build Pickers ────────────────────────────────────
@@ -701,7 +702,26 @@ export function setupSettingsUI() {
     v => settings.sfx.enabled = v);
   bindSlider('setting-master-volume', 'val-master-volume',
     () => Math.round(settings.sfx.masterVolume * 100),
-    v => settings.sfx.masterVolume = v / 100,
+    v => {
+      settings.sfx.masterVolume = v / 100;
+      updateMusicMasterVolume();
+    },
+    v => `${v}%`);
+
+  // Music
+  bindCheckbox('setting-music-enabled',
+    () => settings.sfx.music.enabled,
+    v => {
+      settings.sfx.music.enabled = v;
+      if (v) {
+        playMusic();
+      } else {
+        pauseMusic();
+      }
+    });
+  bindSlider('setting-music-volume', 'val-music-volume',
+    () => Math.round(settings.sfx.music.volume * 100),
+    v => setMusicVolume(v / 100),
     v => `${v}%`);
 
   // Eat Sound
