@@ -1,5 +1,5 @@
 // Main entry point
-import { buildPickers, setupGameOptions, setupEventListeners, setupSettingsUI } from './ui.js';
+import { buildPickers, setupGameOptions, setupEventListeners, setupSettingsUI, enableSliderDrag } from './ui.js';
 import { state, resizeCanvas } from './state.js';
 import { renderWalls } from './rendering.js';
 import { NEON_COLORS } from './constants.js';
@@ -104,6 +104,9 @@ setupEventListeners(nameInput, joinScreen, lobbyScreen, gameContainer, readyBtn)
 
 // Initialize settings UI
 setupSettingsUI();
+
+// Enable drag on all range sliders (click already works; this adds drag)
+enableSliderDrag();
 
 // Start music on user interaction
 startMusicOnInteraction();

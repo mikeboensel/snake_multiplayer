@@ -111,6 +111,54 @@ function debounce(fn, delay) {
   };
 }
 
+/** Set range input value from a client X position; dispatches input event. */
+function setRangeValueFromClientX(input, clientX) {
+  const rect = input.getBoundingClientRect();
+  const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  const min = parseFloat(input.min) || 0;
+  const max = parseFloat(input.max) || 100;
+  const step = parseFloat(input.step) || 1;
+  let value = min + frac * (max - min);
+  if (step) value = Math.round(value / step) * step;
+  value = Math.max(min, Math.min(max, value));
+  input.value = value;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/** Enable drag on all range inputs (in addition to click). */
+export function enableSliderDrag() {
+  document.querySelectorAll('input[type="range"]').forEach((input) => {
+    const onPointer = (clientX) => setRangeValueFromClientX(input, clientX);
+
+    const onMouseMove = (e) => {
+      onPointer(e.clientX);
+    };
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    input.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      onPointer(e.clientX);
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp, { once: true });
+    });
+
+    const onTouchMove = (e) => {
+      if (e.touches.length) onPointer(e.touches[0].clientX);
+    };
+    const onTouchEnd = () => {
+      document.removeEventListener('touchmove', onTouchMove, { capture: true });
+      document.removeEventListener('touchend', onTouchEnd, { capture: true });
+    };
+    input.addEventListener('touchstart', (e) => {
+      if (e.touches.length) onPointer(e.touches[0].clientX);
+      document.addEventListener('touchmove', onTouchMove, { capture: true });
+      document.addEventListener('touchend', onTouchEnd, { capture: true, once: true });
+    }, { passive: true });
+  });
+}
+
 // ── Game Options ─────────────────────────────────────
 const TICK_RATE_OPTIONS = [
   { label: 'Slow', rate: 5 },
