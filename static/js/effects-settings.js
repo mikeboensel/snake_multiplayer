@@ -5,10 +5,10 @@ export const defaultSettings = {
 	// Visual Effects
 	particles: {
 		enabled: true,
-		count: 30,
-		velocityMin: 60,
-		velocityMax: 140,
-		life: 0.4,
+		count: 50,
+		velocityMin: 80,
+		velocityMax: 200,
+		life: 0.8,
 		sizeMin: 2,
 		sizeMax: 4,
 		patterns: ["burst", "spiral", "ring", "sparkle"],
@@ -17,13 +17,13 @@ export const defaultSettings = {
 	},
 	screenShake: {
 		enabled: true,
-		intensity: 5,
-		duration: 0.6,
+		intensity: 15,
+		duration: 0.8,
 		triggers: ["eat", "death", "collision"],
 	},
 	areaWarp: {
-		enabled: false,
-		intensity: 10,
+		enabled: true,
+		intensity: 15,
 		radius: 100,
 		duration: 0.3,
 	},

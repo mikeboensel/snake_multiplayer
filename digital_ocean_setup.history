@@ -1,33 +1,13 @@
-ls
-    2  btop
-    3  sudo apt update -y
-    4  sudo apt install git btop
-    5  sudo apt update
-    6  sudo apt install -y ca-certificates curl
-    7  sudo install -m 0755 -d /etc/apt/keyrings
-    8  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-    9  sudo chmod a+r /etc/apt/keyrings/docker.asc
-   10  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${VERSION_CODENAME:-$VERSION_ID}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-   11  sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-   12  sudo apt update
-   13  sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-   14  sudo usermod -aG docker $USER
-   15  docker run hello-world
-   16  git 
-   17  ls
-   18  ll
-   19  git clone https://github.com/mikeboensel/snake_multiplayer.git
-   20  cd snake_multiplayer/
-   21  ls
-   22  sudo ufw status
-   23  python -m http.server
-   24  python3 -m http.server
-   25  ip a
-   26  python3 -m http.server
-   27  python3 -m http.server 80
-   28  python3 -m http.server
-   29  docker compose up --build
-   30  docker compose up --build -d
-   31  btop
-   32  exit
-   33  history
+sudo apt update -y
+sudo apt install -y ca-certificates curl git btop
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${VERSION_CODENAME:-$VERSION_ID}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update -y
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker $USER
+docker run hello-world
+git clone https://github.com/mikeboensel/snake_multiplayer.git
+cd snake_multiplayer/
+docker compose up --build -d
